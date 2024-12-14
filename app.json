@@ -3,6 +3,8 @@
     "name": "medplus",
     "slug": "medplus",
     "version": "1.0.0",
+      "scheme": "medplus",
+    
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -22,7 +24,8 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     }
   }
 }
