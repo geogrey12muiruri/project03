@@ -22,7 +22,6 @@ import InsuranceProvider from "../../components/InsuranceProvider";
 import useInsurance from "../../hooks/useInsurance";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-// import { Camera } from 'expo-camera'; // Remove Camera import
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 
@@ -34,8 +33,6 @@ export default function Settings() {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
 
-  console.log('User:', user); // Log the user object to locate the userId
-
   const [form, setForm] = useState({
     emailNotifications: true,
     pushNotifications: false,
@@ -45,7 +42,7 @@ export default function Settings() {
     fullName: `${user?.firstName || ""} ${user?.lastName || ""}`,
     dateOfBirth: user?.dateOfBirth || "",
     gender: user?.gender || "",
-    phoneNumber: user?.phoneNumber || "", // Ensure phoneNumber has an initial value
+    phoneNumber: user?.phoneNumber || "",
     insuranceProvider: user?.insuranceProvider || "",
   });
 
@@ -101,7 +98,7 @@ export default function Settings() {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${user.token}`, // Assuming you have the token stored in the user object
+            'Authorization': `Bearer ${user.token}`,
           },
         });
 
@@ -174,7 +171,7 @@ export default function Settings() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`, // Include the token in the header
+          'Authorization': `Bearer ${user.token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -182,14 +179,12 @@ export default function Settings() {
       if (response.ok) {
         const data = await response.json();
         
-        // Show success feedback to the user
         if (Platform.OS === 'web') {
           alert(data.message);
         } else {
           Alert.alert('Success', data.message);
         }
   
-        // Reset the form fields
         setPatientProfile({
           fullName: `${user?.firstName || ""} ${user?.lastName || ""}`,
           dateOfBirth: user?.dateOfBirth || "",
@@ -198,7 +193,6 @@ export default function Settings() {
           insuranceProvider: user?.insuranceProvider || "",
         });
   
-        // Optionally reset preferences
         setPreferences({
           street: '',
           city: '',
@@ -327,9 +321,7 @@ export default function Settings() {
     <ProtectedRoute>
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
-          {/* Header */}
           <View style={styles.header}>
-          
             <Text numberOfLines={1} style={styles.headerTitle}>
               Settings
             </Text>
@@ -338,7 +330,6 @@ export default function Settings() {
             </TouchableOpacity>
           </View>
 
-          {/* Personal Information */}
           <View style={styles.section}>
             <TouchableOpacity onPress={handlePersonalInfoToggle}>
               <Text style={styles.sectionTitle}>Personal Information</Text>
@@ -392,7 +383,6 @@ export default function Settings() {
             </View>
           </View>
 
-          {/* Preferences */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Preferences</Text>
             <View style={styles.sectionBody}>
@@ -469,7 +459,6 @@ export default function Settings() {
             </View>
           </View>
 
-          {/* Insurance Providers */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Insurance Providers</Text>
             <FlatList
@@ -493,12 +482,10 @@ export default function Settings() {
             />
           </View>
 
-            {/* Save Button */}
             <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
             <Text style={styles.saveButtonText}>Save</Text>
           </TouchableOpacity>
 
-          {/* Resources */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Resources</Text>
             <View style={styles.sectionBody}>
@@ -517,9 +504,6 @@ export default function Settings() {
             </View>
           </View>
 
-        
-
-          {/* Logout */}
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
