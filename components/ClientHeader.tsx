@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { logoutAction, selectUser } from '../app/(redux)/authSlice'; // Updated import
+import { logoutAction, selectUser, setProfileImage } from '../app/(redux)/authSlice'; // Import setProfileImage
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Colors from './Shared/Colors';
