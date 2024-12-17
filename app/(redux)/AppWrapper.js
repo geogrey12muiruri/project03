@@ -19,7 +19,7 @@ function AppWrapper() {
         }}
       >
         <Stack.Screen name="index" options={{ title: "Home" }} />
-        <Stack.Screen name="profile" options={{ title: "Profile" }} />
+        <Stack.Screen name="auth/register" options={{ title: "Register" }} /> {/* Corrected route name */}
         <Stack.Screen name="auth/login" options={{ title: "Login" }} />
       </Stack>
     </Provider>

@@ -43,3 +43,10 @@ const setPassword = async (token, password) => {
 
 // export the functions
 export { loginUser, registerUser, googleLoginUser, setPassword };
+
+export default {
+  loginUser,
+  registerUser,
+  googleLoginUser,
+  setPassword,
+};

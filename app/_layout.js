@@ -11,7 +11,15 @@ export default function RootLayout() {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <PaperProvider>
-          <AppWrapper />
+          <Stack
+            screenOptions={{
+              headerShown: false, // Apply this globally to all screens in this Stack
+            }}
+          >
+            <Stack.Screen name="index" options={{ title: "Home" }} />
+            <Stack.Screen name="auth/registar" options={{ title: "Register" }} /> {/* Corrected route name */}
+            <Stack.Screen name="auth/login" options={{ title: "Login" }} />
+          </Stack>
         </PaperProvider>
       </QueryClientProvider>
     </Provider>

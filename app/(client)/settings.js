@@ -22,7 +22,7 @@ import InsuranceProvider from "../../components/InsuranceProvider";
 import useInsurance from "../../hooks/useInsurance";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera } from 'expo-camera';
+// import { Camera } from 'expo-camera'; // Remove Camera import
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 
