@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import React, { useEffect } from 'react';
-import GoogleSVG from '../assets/images/misc/google.svg';
+
 import { Image } from 'react-native';
 import axios from 'axios';
 import { useDispatch } from 'react-redux';
@@ -81,17 +81,19 @@ const LoginWithGoogle = ({ onLoginSuccess }) => {
         handleToken(response);
     }, [response]);
 
+    const googleImageUri = 'https://res.cloudinary.com/dws2bgxg4/image/upload/v1734447819/google-svgrepo-com_jdwbco.svg';
+
     return (
         <View>
             <TouchableOpacity 
-                style={{backgroundColor: '#fff', padding: 20, borderRadius: 20}} 
+                style={styles.googleButton} 
                 onPress={() => {
                     setIsAuthenticating(true);
                     promptAsync();
                 }}
                 disabled={isAuthenticating}
             >
-                <Image source={GoogleSVG} style={{ height: 35, width: 40 }} />
+                <Image source={{ uri: googleImageUri }} style={styles.googleImage} />
             </TouchableOpacity>
         </View>
     );
@@ -99,4 +101,16 @@ const LoginWithGoogle = ({ onLoginSuccess }) => {
 
 export default LoginWithGoogle;
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+    googleButton: {
+        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    googleImage: {
+        height: 35,
+        width: 40,
+    },
+});

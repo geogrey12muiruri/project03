@@ -18,8 +18,6 @@ import { useDispatch } from 'react-redux';
 import { loginAction } from '../(redux)/authSlice';
 
 import GoogleSVG from '../../assets/images/misc/google.svg';
-import FacebookSVG from '../../assets/images/misc/facebook.svg';
-import TwitterSVG from '../../assets/images/misc/twitter.svg';
 
 import CustomButton from '../../components/CustomButton';
 import InputField from '../../components/InputField';

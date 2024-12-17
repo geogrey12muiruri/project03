@@ -1,35 +1,18 @@
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
-import { persistStore, persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
+import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './authSlice';
 import clinicsReducer from './clinicSlice';
 import doctorsReducer from './doctorSlice';
-
-const persistConfig = {
-  key: 'root',
-  storage,
-  whitelist: ['auth'], // Persist only the auth state
-};
-
-const rootReducer = combineReducers({
-  auth: authReducer,
-  clinics: clinicsReducer,
-  doctors: doctorsReducer,
-});
-
-const persistedReducer = persistReducer(persistConfig, rootReducer);
+import appointmentReducer from './appointmentSlice';
+import prescriptionReducer from './prescriptionSlice';
 
 const store = configureStore({
-  reducer: persistedReducer,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: false,
-    }),
+  reducer: {
+    auth: authReducer,
+    clinics: clinicsReducer,
+    doctors: doctorsReducer,
+    appointments: appointmentReducer,
+    prescriptions: prescriptionReducer,
+  },
 });
-
-export const persistor = persistStore(store);
-
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
 
 export default store;
