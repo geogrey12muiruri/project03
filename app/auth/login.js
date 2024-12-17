@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -12,18 +12,18 @@ import * as Yup from 'yup';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import {useMutation} from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { loginUser } from "../(services)/api/api";
 import { useDispatch } from 'react-redux';
 import { loginAction } from '../(redux)/authSlice';
 
-import LoginSVG from '../../assets/images/misc/loginp.png';
 import GoogleSVG from '../../assets/images/misc/google.svg';
 import FacebookSVG from '../../assets/images/misc/facebook.svg';
 import TwitterSVG from '../../assets/images/misc/twitter.svg';
 
 import CustomButton from '../../components/CustomButton';
 import InputField from '../../components/InputField';
+import LoginWithGoogle from '../../components/LoginWithGoogle';
 
 // Define the validation schema using Yup
 const LoginSchema = Yup.object().shape({
@@ -34,18 +34,66 @@ const LoginSchema = Yup.object().shape({
 const LoginScreen = ({ navigation }) => {
   const router = useRouter();
   const dispatch = useDispatch();
- const mutation = useMutation({
+  const mutation = useMutation({
     mutationFn: loginUser,
     mutationKey: ["login"],
   });
-    
+
+  const handleLoginSuccess = (data) => {
+    const userData = {
+      id: data.id,
+      email: data.email,
+      username: data.username,
+      token: data.token,
+      firstName: data.firstName || '',
+      lastName: data.lastName || '',
+      profilePicture: data.profilePicture || '',
+    };
+    dispatch(loginAction(userData));
+    router.push('/(client)');
+  };
+
+  const handleLoginError = (error) => {
+    let errorMessage = "An error occurred. Please try again.";
+    if (error?.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    }
+    setMessage(errorMessage);
+    setMessageType("error");
+  };
+
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
+
+  const imageUrl = "https://res.cloudinary.com/dws2bgxg4/image/upload/v1734385887/loginp_ovgecg.png"; // Replace with your Cloudinary URL
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!imageLoaded) {
+        setImageError(true);
+      }
+    }, 6000); // 6000ms timeout
+
+    return () => clearTimeout(timer);
+  }, [imageLoaded]);
+
   return (
     <SafeAreaView style={{ flex: 1, justifyContent: 'center' }}>
       <View style={{ paddingHorizontal: 25 }}>
         <View style={{ alignItems: 'center' }}>
+          {!imageLoaded && !imageError && (
+            <Text>Loading image...</Text>
+          )}
+          {imageError && (
+            <Text>Error loading image</Text>
+          )}
           <Image
-            source={LoginSVG}
+            source={{ uri: imageUrl }}
             style={{ height: 300, width: 300, transform: [{ rotate: '-5deg' }] }}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
           />
         </View>
 
@@ -59,6 +107,12 @@ const LoginScreen = ({ navigation }) => {
           }}>
           Login
         </Text>
+
+        {message && (
+          <Text style={{ color: messageType === "error" ? "red" : "green", marginBottom: 20 }}>
+            {message}
+          </Text>
+        )}
 
         <Formik
           initialValues={{ email: '', password: '' }}
@@ -75,11 +129,11 @@ const LoginScreen = ({ navigation }) => {
               .mutateAsync(payload)
               .then((data) => {
                 console.log('Login successful:', data);
-                dispatch(loginAction(data));
-                router.push('/(client)');
+                handleLoginSuccess(data);
               })
               .catch((error) => {
                 console.error('Login error:', error);
+                handleLoginError(error);
               });
           }}
         >
@@ -141,42 +195,10 @@ const LoginScreen = ({ navigation }) => {
         <View
           style={{
             flexDirection: 'row',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
             marginBottom: 30,
           }}>
-          <TouchableOpacity
-            onPress={() => { }}
-            style={{
-              borderColor: '#ddd',
-              borderWidth: 2,
-              borderRadius: 10,
-              paddingHorizontal: 30,
-              paddingVertical: 10,
-            }}>
-            <Image source={GoogleSVG} style={{ height: 24, width: 24 }} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => { }}
-            style={{
-              borderColor: '#ddd',
-              borderWidth: 2,
-              borderRadius: 10,
-              paddingHorizontal: 30,
-              paddingVertical: 10,
-            }}>
-            <Image source={FacebookSVG} style={{ height: 24, width: 24 }} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => { }}
-            style={{
-              borderColor: '#ddd',
-              borderWidth: 2,
-              borderRadius: 10,
-              paddingHorizontal: 30,
-              paddingVertical: 10,
-            }}>
-            <Image source={TwitterSVG} style={{ height: 24, width: 24 }} />
-          </TouchableOpacity>
+          <LoginWithGoogle onLoginSuccess={handleLoginSuccess} />
         </View>
 
         <View
@@ -186,7 +208,7 @@ const LoginScreen = ({ navigation }) => {
             marginBottom: 30,
           }}>
           <Text>New to the app?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+          <TouchableOpacity onPress={() => router.push("/auth/registar")}>
             <Text style={{ color: '#AD40AF', fontWeight: '700' }}> Register</Text>
           </TouchableOpacity>
         </View>

@@ -1,181 +1,315 @@
-import React from 'react';
+import React, { useState, useEffect } from "react";
 import {
+  StyleSheet,
   SafeAreaView,
+  ScrollView,
   View,
   Text,
-  TextInput,
   TouchableOpacity,
+  Switch,
   Image,
-} from 'react-native';
-import { Formik } from 'formik';
-import * as Yup from 'yup';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
+  FlatList,
+} from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import { useRouter } from "expo-router";
+import { logoutAction } from "../(redux)/authSlice";
+import FeatherIcon from "react-native-vector-icons/Feather";
+import ProtectedRoute from "../../components/ProtectedRoute";
+import InsuranceProvider from "../../components/InsuranceProvider";
+import useInsurance from "../../hooks/useInsurance";
 
-import LoginSVG from '../../assets/images/misc/loginp.png';
-import GoogleSVG from '../../assets/images/misc/google.svg';
-import FacebookSVG from '../../assets/images/misc/facebook.svg';
-import TwitterSVG from '../../assets/images/misc/twitter.svg';
-
-import CustomButton from '../../components/CustomButton';
-import InputField from '../../components/InputField';
-
-// Define the validation schema using Yup
-const LoginSchema = Yup.object().shape({
-  email: Yup.string().email('Invalid email').required('Required'),
-  password: Yup.string().min(6, 'Too Short!').required('Required'),
-});
-
-const LoginScreen = ({ navigation }) => {
+export default function Settings() {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
+
+  const [form, setForm] = useState({
+    emailNotifications: true,
+    pushNotifications: false,
+  });
+
+  const [patientProfile, setPatientProfile] = useState({
+    fullName: `${user?.firstName || ""} ${user?.lastName || ""}`,
+    dateOfBirth: user?.dateOfBirth || "",
+    gender: user?.gender || "",
+    insuranceProvider: user?.insuranceProvider || "",
+  });
+
+  const insuranceProviders = useInsurance();
+
+  useEffect(() => {
+    if (user) {
+      setPatientProfile({
+        fullName: `${user.firstName} ${user.lastName}`,
+        dateOfBirth: user.dateOfBirth || "",
+        gender: user.gender || "",
+        insuranceProvider: user.insuranceProvider || "",
+      });
+    }
+  }, [user]);
+
+  const handleLogout = () => {
+    dispatch(logoutAction());
+    router.push("/");
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, justifyContent: 'center' }}>
-      <View style={{ paddingHorizontal: 25 }}>
-        <View style={{ alignItems: 'center' }}>
-          <Image
-            source={LoginSVG}
-            style={{ height: 300, width: 300, transform: [{ rotate: '-5deg' }] }}
-          />
-        </View>
+    <ProtectedRoute>
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.content}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity>
+              <FeatherIcon color="#000" name="arrow-left" size={24} />
+            </TouchableOpacity>
+            <Text numberOfLines={1} style={styles.headerTitle}>
+              Settings
+            </Text>
+            <TouchableOpacity>
+              <FeatherIcon color="#000" name="more-vertical" size={24} />
+            </TouchableOpacity>
+          </View>
 
-        <Text
-          style={{
-            fontFamily: 'Roboto-Medium',
-            fontSize: 28,
-            fontWeight: '500',
-            color: '#333',
-            marginBottom: 30,
-          }}>
-          Login
-        </Text>
+          {/* Personal Information */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Personal Information</Text>
+            <View style={styles.sectionBody}>
+              <TouchableOpacity style={styles.profile}>
+                <Image
+                  alt=""
+                  source={{ uri: user?.picture || "https://via.placeholder.com/150" }}
+                  style={styles.profileAvatar}
+                />
+                <View style={styles.profileBody}>
+                  <Text style={styles.profileName}>
+                    {user ? `${user.firstName} ${user.lastName}` : "John Doe"}
+                  </Text>
+                  <Text style={styles.profileHandle}>{user ? user.email : "john@example.com"}</Text>
+                </View>
+                <FeatherIcon color="#bcbcbc" name="chevron-right" size={22} />
+              </TouchableOpacity>
+            </View>
+          </View>
 
-        <Formik
-  initialValues={{ email: '', password: '' }}
-  validationSchema={LoginSchema}
-  onSubmit={(values) => {
-    console.log('Formik onSubmit triggered with:', values);
-    router.push('/(client)');
+          {/* Preferences */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Preferences</Text>
+            <View style={styles.sectionBody}>
+              <View style={[styles.rowWrapper, styles.rowFirst]}>
+                <TouchableOpacity style={styles.row}>
+                  <Text style={styles.rowLabel}>Language</Text>
+                  <View style={styles.rowSpacer} />
+                  <Text style={styles.rowValue}>English</Text>
+                  <FeatherIcon color="#bcbcbc" name="chevron-right" size={19} />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.rowWrapper}>
+                <TouchableOpacity style={styles.row}>
+                  <Text style={styles.rowLabel}>Location</Text>
+                  <View style={styles.rowSpacer} />
+                  <Text style={styles.rowValue}>Los Angeles, CA</Text>
+                  <FeatherIcon color="#bcbcbc" name="chevron-right" size={19} />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.rowWrapper}>
+                <View style={styles.row}>
+                  <Text style={styles.rowLabel}>Email Notifications</Text>
+                  <View style={styles.rowSpacer} />
+                  <Switch
+                    onValueChange={(emailNotifications) =>
+                      setForm({ ...form, emailNotifications })
+                    }
+                    value={form.emailNotifications}
+                  />
+                </View>
+              </View>
+              <View style={[styles.rowWrapper, styles.rowLast]}>
+                <View style={styles.row}>
+                  <Text style={styles.rowLabel}>Push Notifications</Text>
+                  <View style={styles.rowSpacer} />
+                  <Switch
+                    onValueChange={(pushNotifications) =>
+                      setForm({ ...form, pushNotifications })
+                    }
+                    value={form.pushNotifications}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
 
-  }}
->
-  {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
-    <View>
-      <InputField
-        label="Email ID"
-        icon={
-          <MaterialIcons
-            name="alternate-email"
-            size={20}
-            color="#666"
-            style={{ marginRight: 5 }}
-          />
-        }
-        keyboardType="email-address"
-        onChangeText={(text) => {
-          console.log('Email Input:', text);
-          handleChange('email')(text);
-        }}
-        onBlur={handleBlur('email')}
-        value={values.email}
-      />
-      {errors.email && touched.email && (
-        <Text style={{ color: 'red' }}>{errors.email}</Text>
-      )}
+          {/* Insurance Providers */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Insurance Providers</Text>
+            <FlatList
+              data={insuranceProviders}
+              horizontal
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.insuranceCard,
+                    item.name === patientProfile.insuranceProvider && styles.selectedInsuranceCard,
+                  ]}
+                  onPress={() =>
+                    setPatientProfile({ ...patientProfile, insuranceProvider: item.name })
+                  }
+                >
+                  <Text style={styles.insuranceCardText}>{item.name}</Text>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item._id.toString()}
+              nestedScrollEnabled
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.insuranceListContent}
+            />
+          </View>
 
-      <InputField
-        label="Password"
-        icon={
-          <Ionicons
-            name="lock-closed-outline"
-            size={20}
-            color="#666"
-            style={{ marginRight: 5 }}
-          />
-        }
-        inputType="password"
-        onChangeText={(text) => {
-          console.log('Password Input:', text);
-          handleChange('password')(text);
-        }}
-        onBlur={handleBlur('password')}
-        value={values.password}
-      />
-      {errors.password && touched.password && (
-        <Text style={{ color: 'red' }}>{errors.password}</Text>
-      )}
+          {/* Resources */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Resources</Text>
+            <View style={styles.sectionBody}>
+              <TouchableOpacity style={styles.row}>
+                <Text style={styles.rowLabel}>Contact Us</Text>
+                <FeatherIcon color="#bcbcbc" name="chevron-right" size={19} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.row}>
+                <Text style={styles.rowLabel}>Report Bug</Text>
+                <FeatherIcon color="#bcbcbc" name="chevron-right" size={19} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.row}>
+                <Text style={styles.rowLabel}>Terms and Privacy</Text>
+                <FeatherIcon color="#bcbcbc" name="chevron-right" size={19} />
+              </TouchableOpacity>
+            </View>
+          </View>
 
-      <CustomButton 
-        label="Login" 
-        onPress={() => {
-          console.log('Button Pressed');
-          handleSubmit();
-        }} 
-      />
-    </View>
-  )}
-</Formik>
-
-
-        <Text style={{ textAlign: 'center', color: '#666', marginBottom: 30 }}>
-          Or, login with ...
-        </Text>
-
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 30,
-          }}>
-          <TouchableOpacity
-            onPress={() => { }}
-            style={{
-              borderColor: '#ddd',
-              borderWidth: 2,
-              borderRadius: 10,
-              paddingHorizontal: 30,
-              paddingVertical: 10,
-            }}>
-            <Image source={GoogleSVG} style={{ height: 24, width: 24 }} />
+          {/* Logout */}
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => { }}
-            style={{
-              borderColor: '#ddd',
-              borderWidth: 2,
-              borderRadius: 10,
-              paddingHorizontal: 30,
-              paddingVertical: 10,
-            }}>
-            <Image source={FacebookSVG} style={{ height: 24, width: 24 }} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => { }}
-            style={{
-              borderColor: '#ddd',
-              borderWidth: 2,
-              borderRadius: 10,
-              paddingHorizontal: 30,
-              paddingVertical: 10,
-            }}>
-            <Image source={TwitterSVG} style={{ height: 24, width: 24 }} />
-          </TouchableOpacity>
-        </View>
-
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'center',
-            marginBottom: 30,
-          }}>
-          <Text>New to the app?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={{ color: '#AD40AF', fontWeight: '700' }}> Register</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </ProtectedRoute>
   );
-};
+}
 
-export default LoginScreen;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f8f8f8",
+  },
+  content: {
+    padding: 16,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  section: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  sectionBody: {
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+    backgroundColor: "#fff",
+    padding: 12,
+  },
+  profile: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  profileAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 9999,
+    marginRight: 12,
+  },
+  profileBody: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#292929",
+  },
+  profileHandle: {
+    fontSize: 16,
+    color: "#858585",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+  },
+  rowWrapper: {
+    borderTopWidth: 1,
+    borderColor: "#f0f0f0",
+  },
+  rowFirst: {
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  rowLabel: {
+    fontSize: 16,
+    color: "#000",
+  },
+  rowSpacer: {
+    flex: 1,
+  },
+  rowValue: {
+    fontSize: 16,
+    color: "#ababab",
+  },
+  rowLast: {
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  insuranceListContent: {
+    paddingVertical: 8,
+  },
+  insuranceCard: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    marginHorizontal: 4,
+    elevation: 2,
+  },
+  selectedInsuranceCard: {
+    borderColor: "#007BFF",
+    borderWidth: 1,
+  },
+  insuranceCardText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  logoutButton: {
+    marginTop: 20,
+    padding: 12,
+    backgroundColor: "#FF3B30",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  logoutText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+});

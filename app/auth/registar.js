@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, createRef } from "react";
 import {
   View,
   StyleSheet,
@@ -6,13 +6,19 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Keyboard,
+  ScrollView,
 } from "react-native";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import { useRouter } from "expo-router";
 import { useMutation } from "@tanstack/react-query";
 import { registerUser } from "../(services)/api/api";
-
+import axios from "axios";
+import Loader from "../../components/Loader";
+import LoginWithGoogle from '../../components/LoginWithGoogle';
 
 const RegisterSchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Required"),
@@ -20,164 +26,342 @@ const RegisterSchema = Yup.object().shape({
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("password"), null], "Passwords must match")
     .required("Required"),
+  firstName: Yup.string().required("Required"),
+  lastName: Yup.string().required("Required"),
 });
 
 export default function Register() {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+  const [timerActive, setTimerActive] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const emailInputRef = createRef();
+  const passwordInputRef = createRef();
+  const firstNameInputRef = createRef();
+  const lastNameInputRef = createRef();
+  const confirmPasswordInputRef = createRef();
 
   const mutation = useMutation({
     mutationFn: registerUser,
     mutationKey: ["register"],
   });
 
-  console.log(mutation);
+  useEffect(() => {
+    let timer;
+
+    if (timerActive && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+
+    if (countdown === 0) {
+      setTimerActive(false);
+      setMessage("Verification code has expired.");
+      setMessageType("error");
+    }
+
+    return () => clearInterval(timer);
+  }, [timerActive, countdown]);
+
+  const imageUrl = "https://res.cloudinary.com/dws2bgxg4/image/upload/v1734385887/loginp_ovgecg.png"; // Replace with your Cloudinary URL
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Register</Text>
-      {mutation?.isError ? (
-        <Text style={styles.errorText}>
-          {mutation?.error?.response?.data?.message}
-        </Text>
-      ) : null}
-      {mutation?.isSuccess ? (
-        <Text style={styles.successText}>
-          {mutation?.error?.response?.data?.message}
-        </Text>
-      ) : null}
-      <Formik
-        initialValues={{
-          email: "atom@gmail.com",
-          password: "123456",
-          confirmPassword: "123456",
-        }}
-        validationSchema={RegisterSchema}
-        onSubmit={(values) => {
-          const data = {
-            email: values.email,
-            password: values.password,
-          };
-          mutation
-            .mutateAsync(data)
-            .then(() => {
-              setMessage("Registration successful!");
-              setMessageType("success");
-              setTimeout(() => {
-                setMessage("");
-                router.push("/(tabs)");
-              }, 2000); // Redirect after 2 seconds
-            })
-            .catch((error) => {
-              setMessage(error?.response?.data?.message);
-              setMessageType("error");
-            });
-        }}
-      >
-        {({
-          handleChange,
-          handleBlur,
-          handleSubmit,
-          values,
-          errors,
-          touched,
-        }) => (
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              onChangeText={handleChange("email")}
-              onBlur={handleBlur("email")}
-              value={values.email}
-              keyboardType="email-address"
-            />
-            {errors.email && touched.email ? (
-              <Text style={styles.errorText}>{errors.email}</Text>
-            ) : null}
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              onChangeText={handleChange("password")}
-              onBlur={handleBlur("password")}
-              value={values.password}
-              secureTextEntry
-            />
-            {errors.password && touched.password ? (
-              <Text style={styles.errorText}>{errors.password}</Text>
-            ) : null}
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm Password"
-              onChangeText={handleChange("confirmPassword")}
-              onBlur={handleBlur("confirmPassword")}
-              value={values.confirmPassword}
-              secureTextEntry
-            />
-            {errors.confirmPassword && touched.confirmPassword ? (
-              <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-            ) : null}
-            <TouchableOpacity
-              style={styles.button}
-              onPress={handleSubmit}
-              disabled={mutation.isLoading}
-            >
-              {mutation.isPending ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Register</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
-      </Formik>
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <Loader loading={loading} />
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          justifyContent: 'center',
+          alignContent: 'center',
+        }}>
+        <View style={{ alignItems: 'center' }}>
+          <Image
+            source={{ uri: imageUrl }}
+            style={{
+              width: '50%',
+              height: 100,
+              resizeMode: 'contain',
+              margin: 30,
+            }}
+          />
+        </View>
+        <KeyboardAvoidingView enabled>
+          <Formik
+            initialValues={{
+              email: "",
+              password: "",
+              confirmPassword: "",
+              firstName: "",
+              lastName: "",
+            }}
+            validationSchema={RegisterSchema}
+            onSubmit={(values) => {
+              const data = {
+                email: values.email,
+                password: values.password,
+                firstName: values.firstName,
+                lastName: values.lastName,
+              };
+              setLoading(true);
+              mutation
+                .mutateAsync(data)
+                .then(() => {
+                  setMessage("Registration successful! Please check your email for verification.");
+                  setMessageType("success");
+                  setIsVerifying(true);
+                  setCountdown(60);
+                  setTimerActive(true);
+                  setLoading(false);
+                })
+                .catch((error) => {
+                  setMessage(error?.response?.data?.message);
+                  setMessageType("error");
+                  setLoading(false);
+                });
+            }}
+          >
+            {({
+              handleChange,
+              handleBlur,
+              handleSubmit,
+              values,
+              errors,
+              touched,
+            }) => {
+              const handleVerificationPress = async () => {
+                try {
+                  const response = await axios.post('http://localhost:3000/api/users/verify-email', {
+                    email: values.email,
+                    verificationCode,
+                  });
+
+                  setMessage("Verification successful! You can now log in.");
+                  setMessageType("success");
+                  setIsVerifying(false);
+                  router.push('/auth/login');
+                } catch (error) {
+                  setMessage("Verification failed. Please try again.");
+                  setMessageType("error");
+                }
+              };
+
+              return (
+                <View style={styles.form}>
+                  {!isVerifying ? (
+                    <>
+                      <View style={styles.SectionStyle}>
+                        <TextInput
+                          style={styles.inputStyle}
+                          placeholder="First Name"
+                          placeholderTextColor="#666"
+                          onChangeText={handleChange("firstName")}
+                          onBlur={handleBlur("firstName")}
+                          value={values.firstName}
+                          ref={firstNameInputRef}
+                          returnKeyType="next"
+                          onSubmitEditing={() =>
+                            lastNameInputRef.current && lastNameInputRef.current.focus()
+                          }
+                          blurOnSubmit={false}
+                        />
+                      </View>
+                      {errors.firstName && touched.firstName ? (
+                        <Text style={styles.errorTextStyle}>{errors.firstName}</Text>
+                      ) : null}
+                      <View style={styles.SectionStyle}>
+                        <TextInput
+                          style={styles.inputStyle}
+                          placeholder="Last Name"
+                          placeholderTextColor="#666"
+                          onChangeText={handleChange("lastName")}
+                          onBlur={handleBlur("lastName")}
+                          value={values.lastName}
+                          ref={lastNameInputRef}
+                          returnKeyType="next"
+                          onSubmitEditing={() =>
+                            emailInputRef.current && emailInputRef.current.focus()
+                          }
+                          blurOnSubmit={false}
+                        />
+                      </View>
+                      {errors.lastName && touched.lastName ? (
+                        <Text style={styles.errorTextStyle}>{errors.lastName}</Text>
+                      ) : null}
+                      <View style={styles.SectionStyle}>
+                        <TextInput
+                          style={styles.inputStyle}
+                          placeholder="Email"
+                          placeholderTextColor="#666"
+                          onChangeText={handleChange("email")}
+                          onBlur={handleBlur("email")}
+                          value={values.email}
+                          keyboardType="email-address"
+                          ref={emailInputRef}
+                          returnKeyType="next"
+                          onSubmitEditing={() =>
+                            passwordInputRef.current && passwordInputRef.current.focus()
+                          }
+                          blurOnSubmit={false}
+                        />
+                      </View>
+                      {errors.email && touched.email ? (
+                        <Text style={styles.errorTextStyle}>{errors.email}</Text>
+                      ) : null}
+                      <View style={styles.SectionStyle}>
+                        <TextInput
+                          style={styles.inputStyle}
+                          placeholder="Password"
+                          placeholderTextColor="#666"
+                          onChangeText={handleChange("password")}
+                          onBlur={handleBlur("password")}
+                          value={values.password}
+                          secureTextEntry
+                          ref={passwordInputRef}
+                          returnKeyType="next"
+                          onSubmitEditing={() =>
+                            confirmPasswordInputRef.current && confirmPasswordInputRef.current.focus()
+                          }
+                          blurOnSubmit={false}
+                        />
+                      </View>
+                      {errors.password && touched.password ? (
+                        <Text style={styles.errorTextStyle}>{errors.password}</Text>
+                      ) : null}
+                      <View style={styles.SectionStyle}>
+                        <TextInput
+                          style={styles.inputStyle}
+                          placeholder="Confirm Password"
+                          placeholderTextColor="#666"
+                          onChangeText={handleChange("confirmPassword")}
+                          onBlur={handleBlur("confirmPassword")}
+                          value={values.confirmPassword}
+                          secureTextEntry
+                          ref={confirmPasswordInputRef}
+                          returnKeyType="done"
+                          onSubmitEditing={Keyboard.dismiss}
+                          blurOnSubmit={false}
+                        />
+                      </View>
+                      {errors.confirmPassword && touched.confirmPassword ? (
+                        <Text style={styles.errorTextStyle}>{errors.confirmPassword}</Text>
+                      ) : null}
+                      <TouchableOpacity
+                        style={styles.buttonStyle}
+                        onPress={handleSubmit}
+                        disabled={mutation.isLoading}
+                      >
+                        {mutation.isLoading ? (
+                          <ActivityIndicator color="#fff" />
+                        ) : (
+                          <Text style={styles.buttonTextStyle}>Register</Text>
+                        )}
+                      </TouchableOpacity>
+                      <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 30 }}>
+                        <LoginWithGoogle onLoginSuccess={() => router.push('/(client)')} />
+                      </View>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          justifyContent: 'center',
+                          marginBottom: 30,
+                        }}>
+                        <Text>Already have an account?</Text>
+                        <TouchableOpacity onPress={() => router.push("/auth/login")}>
+                          <Text style={{ color: '#AD40AF', fontWeight: '700' }}> Login</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.subHeading}>Enter the verification code sent to your email</Text>
+                      <TextInput
+                        style={styles.inputStyle}
+                        placeholder="Verification Code"
+                        placeholderTextColor="#666"
+                        onChangeText={setVerificationCode}
+                        value={verificationCode}
+                        keyboardType="numeric"
+                      />
+                      <Text style={styles.countdownText}>
+                        {countdown > 0 ? `Time remaining: ${countdown}s` : 'Code expired!'}
+                      </Text>
+                      <TouchableOpacity style={styles.buttonStyle} onPress={handleVerificationPress}>
+                        <Text style={styles.buttonTextStyle}>Verify</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              );
+            }}
+          </Formik>
+        </KeyboardAvoidingView>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  SectionStyle: {
+    flexDirection: 'row',
+    height: 40,
+    marginTop: 20,
+    marginLeft: 35,
+    marginRight: 35,
+    margin: 10,
+  },
+  buttonStyle: {
+    backgroundColor: '#AD40AF',
+    borderWidth: 0,
+    color: '#FFFFFF',
+    borderColor: '#AD40AF',
+    height: 40,
+    alignItems: 'center',
+    borderRadius: 30,
+    marginLeft: 35,
+    marginRight: 35,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  buttonTextStyle: {
+    color: '#FFFFFF',
+    paddingVertical: 10,
+    fontSize: 16,
+  },
+  inputStyle: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "#f5f5f5",
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    marginBottom: 24,
-  },
-  form: {
-    width: "100%",
-  },
-  input: {
-    height: 50,
-    borderColor: "#ccc",
+    color: '#333',
+    paddingLeft: 15,
+    paddingRight: 15,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: "#fff",
+    borderRadius: 30,
+    borderColor: '#dadae8',
   },
-  errorText: {
-    color: "red",
-    marginBottom: 16,
+  errorTextStyle: {
+    color: 'red',
+    textAlign: 'center',
+    fontSize: 14,
   },
-  successText: {
-    color: "green",
-    marginBottom: 16,
-  },
-  button: {
-    height: 50,
-    backgroundColor: "#6200ea",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 8,
-    marginTop: 16,
-  },
-  buttonText: {
-    color: "#fff",
+  successTextStyle: {
+    color: '#333',
+    textAlign: 'center',
     fontSize: 18,
-    fontWeight: "bold",
+    padding: 30,
+  },
+  subHeading: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#333',
+  },
+  countdownText: {
+    fontSize: 14,
+    color: "#888",
+    marginBottom: 10,
+    textAlign: 'center',
   },
 });

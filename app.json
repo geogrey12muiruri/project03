@@ -3,8 +3,7 @@
     "name": "medplus",
     "slug": "medplus",
     "version": "1.0.0",
-      "scheme": "medplus",
-    
+    "scheme": "medplus",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,13 +14,15 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "buildNumber": "com.parroti.medplus"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.parroti.medplus"
     },
     "web": {
       "favicon": "./assets/favicon.png",
