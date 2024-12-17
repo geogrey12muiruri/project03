@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3000";
+const API_URL = "https://project03-rj91.onrender.com";
 
 // login
 const loginUser = async ({ email, password }) => {

@@ -97,7 +97,7 @@ export default function Settings() {
   useEffect(() => {
     const fetchPatientProfile = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/users/profile', {
+        const response = await fetch('https://project03-rj91.onrender.com/api/users/profile', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -170,7 +170,7 @@ export default function Settings() {
     };
   
     try {
-      const response = await fetch('http://localhost:3000/api/users/updatePatientProfile', {
+      const response = await fetch('https://project03-rj91.onrender.com/api/users/updatePatientProfile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
