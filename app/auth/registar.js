@@ -135,7 +135,7 @@ export default function Register() {
             }) => {
               const handleVerificationPress = async () => {
                 try {
-                  const response = await axios.post('http://localhost:3000/api/users/verify-email', {
+                  const response = await axios.post('https://project03-rj91.onrender.com/api/users/verify-email', {
                     email: values.email,
                     verificationCode,
                   });

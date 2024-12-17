@@ -28,7 +28,7 @@ const LoginWithGoogle = ({ onLoginSuccess }) => {
 
     const sendGoogleUserDataToBackend = async (userData) => {
         try {
-            const response = await axios.post('http://localhost:3000/api/users/google-login', {
+            const response = await axios.post('https://project03-rj91.onrender.com/api/users/google-login', {
                 email: userData.email,
                 firstname: userData.given_name,
                 lastname: userData.family_name,
