@@ -11,7 +11,7 @@ const useInsurance = () => {
         if (storedProviders) {
           setInsuranceProviders(JSON.parse(storedProviders));
         } else {
-          const response = await fetch("http://localhost:3000/insurance");
+          const response = await fetch("https://project03-rj91.onrender.com/insurance");
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
