@@ -31,7 +31,8 @@ function RootLayout() {
   );
 }
 
-// Wrap the RootLayout component with the Provider from react-redux
+
+
 function App() {
   return (
     <Provider store={store}>
