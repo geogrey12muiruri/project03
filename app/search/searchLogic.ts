@@ -112,3 +112,5 @@ export const useSearchLogic = () => {
     handleInsuranceChange,
   };
 };
+
+export default useSearchLogic;
