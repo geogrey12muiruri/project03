@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import moment from 'moment';
-import * as Notifications from 'expo-notifications';
+
 import {
     setAppointments,
     setError,
@@ -12,13 +12,7 @@ import {
 } from '../app/(redux)/appointmentSlice';
 import { selectUser } from '../app/(redux)/authSlice';
 
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: false,
-        shouldSetBadge: false,
-    }),
-});
+
 
 const useAppointments = () => {
     const dispatch = useDispatch();
