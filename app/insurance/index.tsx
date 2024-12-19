@@ -137,6 +137,61 @@ const InsuranceScreen = () => {
         <View style={{ width: 24 }} />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
+        <EditableField
+          label="Insurance Number"
+          value={formData.insuranceNumber}
+          onChangeText={(value) => handleInputChange('insuranceNumber', value)}
+          isEditing={editingField === 'insuranceNumber'}
+          onEdit={() => handleEdit('insuranceNumber')}
+          iconColor="#007bff"
+          iconName="file-text"
+        />
+        <EditableField
+          label="Group Number"
+          value={formData.groupNumber}
+          onChangeText={(value) => handleInputChange('groupNumber', value)}
+          isEditing={editingField === 'groupNumber'}
+          onEdit={() => handleEdit('groupNumber')}
+          iconColor="#fe9400"
+          iconName="hash"
+        />
+        <EditableField
+          label="Policyholder Name"
+          value={formData.policyholderName}
+          onChangeText={(value) => handleInputChange('policyholderName', value)}
+          isEditing={editingField === 'policyholderName'}
+          onEdit={() => handleEdit('policyholderName')}
+          iconColor="#32c759"
+          iconName="user"
+        />
+        <EditableField
+          label="Relationship to Policyholder"
+          value={formData.relationshipToPolicyholder}
+          onChangeText={(value) => handleInputChange('relationshipToPolicyholder', value)}
+          isEditing={editingField === 'relationshipToPolicyholder'}
+          onEdit={() => handleEdit('relationshipToPolicyholder')}
+          iconColor="#007afe"
+          iconName="users"
+        />
+        <EditableField
+          label="Effective Date"
+          value={formData.effectiveDate}
+          onChangeText={(value) => handleInputChange('effectiveDate', value)}
+          isEditing={editingField === 'effectiveDate'}
+          onEdit={() => handleEdit('effectiveDate')}
+          iconColor="#ff6347"
+          iconName="calendar"
+        />
+        <EditableField
+          label="Expiration Date"
+          value={formData.expirationDate}
+          onChangeText={(value) => handleInputChange('expirationDate', value)}
+          isEditing={editingField === 'expirationDate'}
+          onEdit={() => handleEdit('expirationDate')}
+          iconColor="#ff6347"
+          iconName="calendar"
+        />
+        <Text style={styles.addProviderText}>Add Insurance Provider</Text>
         <FlatList
           data={insuranceProviders}
           horizontal
@@ -151,70 +206,13 @@ const InsuranceScreen = () => {
               <View style={styles.insuranceCardIconContainer}>
                 <Image source={{ uri: item.icon }} style={styles.insuranceCardIcon} />
               </View>
+              <Text style={styles.insuranceCardName}>{item.name}</Text>
             </TouchableOpacity>
           )}
           keyExtractor={(item) => item._id.toString()}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.insuranceListContent}
         />
-        {selectedProvider && (
-          <>
-            <EditableField
-              label="Insurance Number"
-              value={formData.insuranceNumber}
-              onChangeText={(value) => handleInputChange('insuranceNumber', value)}
-              isEditing={editingField === 'insuranceNumber'}
-              onEdit={() => handleEdit('insuranceNumber')}
-              iconColor="#007bff"
-              iconName="file-text"
-            />
-            <EditableField
-              label="Group Number"
-              value={formData.groupNumber}
-              onChangeText={(value) => handleInputChange('groupNumber', value)}
-              isEditing={editingField === 'groupNumber'}
-              onEdit={() => handleEdit('groupNumber')}
-              iconColor="#fe9400"
-              iconName="hash"
-            />
-            <EditableField
-              label="Policyholder Name"
-              value={formData.policyholderName}
-              onChangeText={(value) => handleInputChange('policyholderName', value)}
-              isEditing={editingField === 'policyholderName'}
-              onEdit={() => handleEdit('policyholderName')}
-              iconColor="#32c759"
-              iconName="user"
-            />
-            <EditableField
-              label="Relationship to Policyholder"
-              value={formData.relationshipToPolicyholder}
-              onChangeText={(value) => handleInputChange('relationshipToPolicyholder', value)}
-              isEditing={editingField === 'relationshipToPolicyholder'}
-              onEdit={() => handleEdit('relationshipToPolicyholder')}
-              iconColor="#007afe"
-              iconName="users"
-            />
-            <EditableField
-              label="Effective Date"
-              value={formData.effectiveDate}
-              onChangeText={(value) => handleInputChange('effectiveDate', value)}
-              isEditing={editingField === 'effectiveDate'}
-              onEdit={() => handleEdit('effectiveDate')}
-              iconColor="#ff6347"
-              iconName="calendar"
-            />
-            <EditableField
-              label="Expiration Date"
-              value={formData.expirationDate}
-              onChangeText={(value) => handleInputChange('expirationDate', value)}
-              isEditing={editingField === 'expirationDate'}
-              onEdit={() => handleEdit('expirationDate')}
-              iconColor="#ff6347"
-              iconName="calendar"
-            />
-          </>
-        )}
       </ScrollView>
       {loading && (
         <View style={styles.loadingOverlay}>
@@ -260,20 +258,32 @@ const styles = StyleSheet.create({
   insuranceCard: {
     alignItems: 'center',
     marginRight: 15,
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   insuranceCardIconContainer: {
     backgroundColor: '#e0e0e0',
-    padding: 15,
-    borderRadius: 99,
+    padding: 10,
+    borderRadius: 8,
   },
-  selectedInsuranceCardIconContainer: {
-    backgroundColor: '#007BFF',
-    padding: 15,
-    borderRadius: 99,
+  selectedInsuranceCard: {
+    borderColor: '#007BFF',
+    borderWidth: 2,
   },
   insuranceCardIcon: {
     width: 40,
     height: 40,
+  },
+  insuranceCardName: {
+    marginTop: 5,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
   },
   input: {
     borderWidth: 1,
@@ -350,6 +360,12 @@ const styles = StyleSheet.create({
   inputValue: {
     fontSize: 16,
     color: '#555',
+  },
+  addProviderText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+    marginVertical: 10,
   },
 });
 
