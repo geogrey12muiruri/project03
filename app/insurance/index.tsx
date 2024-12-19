@@ -92,6 +92,8 @@ const InsuranceScreen = () => {
       return;
     }
 
+    console.log('User ID:', user.userId); // Log the userId
+
     const payload = {
       userId: user.userId, // Include userId
       ...profileData, // Include profile data
@@ -103,7 +105,7 @@ const InsuranceScreen = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('https://project03-rj91.onrender.com/api/users/updateProfile', {
+      const response = await fetch('https://project03-rj91.onrender.com/api/users/updatePatientProfile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

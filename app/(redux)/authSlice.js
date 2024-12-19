@@ -78,12 +78,12 @@ const authSlice = createSlice({
         firstName: action.payload.firstName,
         lastName: action.payload.lastName,
         picture: action.payload.picture,
-        userId: action.payload.userId,
+        userId: action.payload.id, // Ensure userId is set correctly
         token: action.payload.token
       };
       state.name = action.payload.firstName + ' ' + action.payload.lastName;
       state.email = action.payload.email;
-      state.userId = action.payload.userId;
+      state.userId = action.payload.id; // Ensure userId is set correctly
       state.userType = action.payload.userType;
       state.isAuthenticated = true;
       state.professional = action.payload.professional || null;
@@ -92,15 +92,7 @@ const authSlice = createSlice({
       AsyncStorage.setItem("userInfo", JSON.stringify(state.user));
     },
     logoutAction: (state) => {
-      state.user = null;
-      state.name = null;
-      state.email = null;
-      state.userId = null;
-      state.userType = null;
-      state.isAuthenticated = false;
-      state.professional = null;
-      state.profileImage = null;
-      state.loading = false;
+      Object.assign(state, initialState); // Reset state to initial values
       AsyncStorage.removeItem("userInfo");
       AsyncStorage.removeItem('profileImage');
     },
