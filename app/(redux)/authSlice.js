@@ -43,6 +43,29 @@ const initialState = {
   isAuthenticated: false,
   professional: null,
   profileImage: null,
+  profileData: {
+    fullName: '',
+    dob: '',
+    gender: '',
+    phoneNumber: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: '',
+    },
+    emergencyContact: '',
+  },
+  insuranceData: {
+    insuranceProvider: '',
+    insuranceNumber: '',
+    groupNumber: '',
+    policyholderName: '',
+    relationshipToPolicyholder: '',
+    effectiveDate: '',
+    expirationDate: '',
+    insuranceCardImage: null,
+  },
 };
 
 const authSlice = createSlice({
@@ -108,7 +131,10 @@ const authSlice = createSlice({
       state.profileImage = action.payload;
     },
     updateProfile: (state, action) => {
-      state.user = { ...state.user, ...action.payload };
+      state.profileData = action.payload; // Update profile data
+    },
+    updateInsurance: (state, action) => {
+      state.insuranceData = action.payload; // Update insurance data
     },
   },
   extraReducers: (builder) => {
@@ -126,7 +152,7 @@ export const selectUser = (state) => ({
   profileImage: state.auth.profileImage,
 });
 
-export const { loginAction, logoutAction, setUser, setLoading, updateUserProfile, updateAttachedToClinic, setProfileImage, updateProfile } = authSlice.actions;
+export const { loginAction, logoutAction, setUser, setLoading, updateUserProfile, updateAttachedToClinic, setProfileImage, updateProfile, updateInsurance } = authSlice.actions;
 
 export default authSlice.reducer;
 

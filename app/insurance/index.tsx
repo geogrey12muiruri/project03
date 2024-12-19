@@ -45,6 +45,7 @@ const EditableField = ({ label, value, onChangeText, isEditing, onEdit, iconColo
 const InsuranceScreen = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
+  const profileData = useSelector((state) => state.auth.profileData); // Assuming profile data is stored in Redux
   const { insuranceProviders } = useInsurance();
   const router = useRouter();
 
@@ -92,7 +93,8 @@ const InsuranceScreen = () => {
     }
 
     const payload = {
-      userId: user.userId,
+      userId: user.userId, // Include userId
+      ...profileData, // Include profile data
       insuranceProvider: selectedProvider.name,
       ...formData,
       insuranceCardImage,
@@ -101,7 +103,7 @@ const InsuranceScreen = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('https://project03-rj91.onrender.com/api/users/updateInsurance', {
+      const response = await fetch('https://project03-rj91.onrender.com/api/users/updateProfile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,14 +115,14 @@ const InsuranceScreen = () => {
       if (response.ok) {
         const data = await response.json();
         Alert.alert('Success', data.message);
-        dispatch(updateProfile({ ...payload }));
+        dispatch(updateProfile(payload));
         router.back();
       } else {
         const errorData = await response.json();
-        Alert.alert('Error', errorData.message || 'Failed to update insurance information');
+        Alert.alert('Error', errorData.message || 'Failed to update profile');
       }
     } catch (error) {
-      console.error('Error updating insurance information:', error);
+      console.error('Error updating profile:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);

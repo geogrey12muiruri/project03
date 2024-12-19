@@ -206,7 +206,7 @@ const userCtrl = {
     }
   }),
   updatePatientProfile: asyncHandler(async (req, res) => {
-    const { userId, fullName, dateOfBirth, gender, insuranceProvider, preferences } = req.body;
+    const { userId, fullName, dateOfBirth, gender, insuranceProvider, insuranceNumber, groupNumber, policyholderName, relationshipToPolicyholder, effectiveDate, expirationDate, insuranceCardImage, preferences, address, phoneNumber, emergencyContact } = req.body;
     const user = await User.findById(userId);
 
     if (!user) {
@@ -221,14 +221,31 @@ const userCtrl = {
     user.dateOfBirth = dateOfBirth || user.dateOfBirth;
     user.gender = gender || user.gender;
     user.insuranceProvider = insuranceProvider || user.insuranceProvider;
-    user.preferences = {
-      street: preferences.street || user.preferences.street,
-      city: preferences.city || user.preferences.city,
-      state: preferences.state || user.preferences.state,
-      zipCode: preferences.zipCode || user.preferences.zipCode,
-      emailNotifications: preferences.emailNotifications !== undefined ? preferences.emailNotifications : user.preferences.emailNotifications,
-      pushNotifications: preferences.pushNotifications !== undefined ? preferences.pushNotifications : user.preferences.pushNotifications,
-    };
+    user.insuranceNumber = insuranceNumber || user.insuranceNumber;
+    user.groupNumber = groupNumber || user.groupNumber;
+    user.policyholderName = policyholderName || user.policyholderName;
+    user.relationshipToPolicyholder = relationshipToPolicyholder || user.relationshipToPolicyholder;
+    user.effectiveDate = effectiveDate || user.effectiveDate;
+    user.expirationDate = expirationDate || user.expirationDate;
+    user.insuranceCardImage = insuranceCardImage || user.insuranceCardImage;
+    user.phoneNumber = phoneNumber || user.phoneNumber;
+    user.emergencyContact = emergencyContact || user.emergencyContact;
+
+    if (address) {
+      user.address = {
+        street: address.street || user.address.street,
+        city: address.city || user.address.city,
+        state: address.state || user.address.state,
+        zipCode: address.zipCode || user.address.zipCode,
+      };
+    }
+
+    if (preferences) {
+      user.preferences = {
+        emailNotifications: preferences.emailNotifications !== undefined ? preferences.emailNotifications : user.preferences.emailNotifications,
+        pushNotifications: preferences.pushNotifications !== undefined ? preferences.pushNotifications : user.preferences.pushNotifications,
+      };
+    }
 
     await user.save();
 

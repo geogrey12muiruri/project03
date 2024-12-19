@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, ScrollView } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, ScrollView, Alert } from 'react-native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import HorizontalLine from '../../components/common/HorizontalLine';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import usePatientProfile  from '../../hooks/usePatientProfile';
+import { useDispatch, useSelector } from 'react-redux';
+import { updateProfile } from '../(redux)/authSlice';
 
 const ProfileScreen = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { patientProfile, pickImage } = usePatientProfile();
+  const user = useSelector((state) => state.auth.user); // Get user data from Redux
   const [fullName, setFullName] = useState('');
   const [dob, setDob] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -21,7 +25,6 @@ const ProfileScreen = () => {
     state: '',
     zipCode: '',
   });
-  const [insuranceProvider, setInsuranceProvider] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
   const [editingField, setEditingField] = useState(null);
 
@@ -33,6 +36,21 @@ const ProfileScreen = () => {
     const currentDate = selectedDate || dob;
     setShowDatePicker(false);
     setDob(currentDate);
+  };
+
+  const handleSaveProfile = () => {
+    const profileData = {
+      userId: user.userId, // Include userId
+      fullName,
+      dob,
+      gender,
+      phoneNumber,
+      address,
+      emergencyContact,
+    };
+
+    dispatch(updateProfile(profileData)); // Store profile data in Redux
+    router.push('/insurance'); // Navigate to insurance screen
   };
 
   return (
@@ -153,11 +171,6 @@ const ProfileScreen = () => {
           iconName="map-pin"
         />
         <HorizontalLine />
-        <TouchableOpacity style={styles.sectionLink} onPress={() => router.push('/insurance')}>
-          <Text style={styles.sectionLinkText}>Insurance Provider</Text>
-          <FeatherIcon name="chevron-right" size={20} color="#007bff" />
-        </TouchableOpacity>
-        <HorizontalLine />
         <EditableField
           label="Emergency Contact"
           value={emergencyContact}
@@ -167,6 +180,11 @@ const ProfileScreen = () => {
           iconColor="#ff6347"
           iconName="phone-call"
         />
+        <HorizontalLine />
+        <TouchableOpacity style={styles.row} onPress={handleSaveProfile}>
+          <Text style={styles.sectionLinkText}>Next: Insurance Provider</Text>
+          <FeatherIcon name="chevron-right" size={20} color="#007bff" />
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -211,6 +229,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 16,
     color: '#333',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    height: 50,
+    backgroundColor: '#f2f2f2',
+    borderRadius: 8,
+    marginBottom: 12,
+    paddingHorizontal: 12,
   },
   profileSection: {
     alignItems: 'center',
@@ -296,6 +324,18 @@ const styles = StyleSheet.create({
   sectionLinkText: {
     fontSize: 16,
     color: '#007bff',
+  },
+  saveButton: {
+    backgroundColor: '#007BFF',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
 
