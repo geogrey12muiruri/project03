@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import React, { useState } from 'react';
 import Clinics from '../../components/client/Clinics';
 import Doctors from '../../components/client/Doctors';
@@ -13,22 +13,27 @@ const Index = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <SearchBar
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onSubmit={handleSearchSubmit}
-      />
-      <Category searchQuery={searchQuery} />
-      <Clinics searchQuery={searchQuery} />
-      <Doctors searchQuery={searchQuery} />
-    </View>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        <SearchBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onSubmit={handleSearchSubmit}
+        />
+        <Category searchQuery={searchQuery} />
+        <Clinics searchQuery={searchQuery} />
+        <Doctors searchQuery={searchQuery} />
+      </View>
+    </ScrollView>
   );
 };
 
 export default Index;
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
     padding: 20,

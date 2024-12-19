@@ -82,7 +82,15 @@ const authSlice = createSlice({
       AsyncStorage.removeItem('profileImage');
     },
     setUser: (state, action) => {
-      state.user = action.payload;
+      const user = action.payload;
+      state.user = user;
+      state.name = user.firstName + ' ' + user.lastName;
+      state.email = user.email;
+      state.userId = user._id;
+      state.userType = user.userType;
+      state.isAuthenticated = true;
+      state.professional = user.professional || null;
+      state.profileImage = user.profileImage || null;
       state.loading = false;
     },
     setLoading: (state, action) => {
@@ -98,6 +106,9 @@ const authSlice = createSlice({
     },
     setProfileImage: (state, action) => {
       state.profileImage = action.payload;
+    },
+    updateProfile: (state, action) => {
+      state.user = { ...state.user, ...action.payload };
     },
   },
   extraReducers: (builder) => {
@@ -115,7 +126,7 @@ export const selectUser = (state) => ({
   profileImage: state.auth.profileImage,
 });
 
-export const { loginAction, logoutAction, setUser, setLoading, updateUserProfile, updateAttachedToClinic, setProfileImage } = authSlice.actions;
+export const { loginAction, logoutAction, setUser, setLoading, updateUserProfile, updateAttachedToClinic, setProfileImage, updateProfile } = authSlice.actions;
 
 export default authSlice.reducer;
 
