@@ -22,9 +22,11 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
     loadProfileImage();
   }, [dispatch, userId]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem('userInfo'); // Ensure user info is removed from storage
+    await AsyncStorage.removeItem('profileImage'); // Ensure profile image is removed from storage
     dispatch(logoutAction());
-    router.push('/');
+    router.push('/auth/login'); // Use replace instead of push to ensure navigation
   };
 
   return (
