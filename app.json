@@ -15,14 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "com.parroti.medplus"
+      "buildNumber": "medplus.company.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.parroti.medplus"
+      "package": "medplus.company.app"
     },
     "web": {
       "favicon": "./assets/favicon.png",

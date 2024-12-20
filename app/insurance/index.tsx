@@ -18,15 +18,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateProfile } from '../(redux)/authSlice';
 import useInsurance from '../../hooks/useInsurance';
 import { useRouter } from 'expo-router';
+import { debounce } from 'lodash';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const EditableField = ({ label, value, onChangeText, isEditing, onEdit, iconColor, iconName }) => (
+const EditableField = ({ value, onChangeText, isEditing, onEdit, iconColor, iconName }) => (
   <View style={styles.inputContainer}>
     <View style={styles.inputWrapper}>
       <View style={[styles.inputIconWrapper, { backgroundColor: iconColor }]}>
         <FeatherIcon name={iconName} size={20} color="#fff" />
       </View>
-      <Text style={styles.inputLabel}>{label}</Text>
-      <Text style={styles.inputValue}>{value || `Enter ${label}`}</Text>
+      <Text style={styles.inputValue}>{value || 'Enter value'}</Text>
       <TouchableOpacity onPress={onEdit}>
         <FeatherIcon name="edit-3" size={20} color={iconColor} />
       </TouchableOpacity>
@@ -34,9 +35,10 @@ const EditableField = ({ label, value, onChangeText, isEditing, onEdit, iconColo
     {isEditing && (
       <TextInput
         style={styles.input}
-        placeholder={`Enter ${label}`}
+        placeholder="Enter value"
         value={value}
         onChangeText={onChangeText}
+        onBlur={() => onChangeText(value)}
       />
     )}
   </View>
@@ -64,6 +66,22 @@ const InsuranceScreen = () => {
   const [editingField, setEditingField] = useState(null);
 
   useEffect(() => {
+    const loadInsuranceData = async () => {
+      try {
+        const storedInsuranceData = await AsyncStorage.getItem('insuranceData');
+        if (storedInsuranceData) {
+          const parsedInsuranceData = JSON.parse(storedInsuranceData);
+          setFormData(parsedInsuranceData);
+          setSelectedProvider(parsedInsuranceData.selectedProvider); // Load selected provider
+        }
+      } catch (error) {
+        console.error('Failed to load insurance data', error);
+      }
+    };
+    loadInsuranceData();
+  }, []);
+
+  useEffect(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 300,
@@ -71,76 +89,59 @@ const InsuranceScreen = () => {
     }).start();
   }, [slideAnim]);
 
-  const handleProviderSelect = (provider) => {
+  const handleProviderSelect = async (provider) => {
     setSelectedProvider(provider);
     console.log('Selected Provider:', provider);
+    const updatedFormData = { ...formData, selectedProvider: provider };
+    try {
+      await AsyncStorage.setItem('insuranceData', JSON.stringify(updatedFormData));
+    } catch (error) {
+      console.error('Error saving selected provider to AsyncStorage:', error);
+    }
   };
 
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleSave = async (updatedFormData) => {
+    const { insuranceNumber, groupNumber, policyholderName, relationshipToPolicyholder } = updatedFormData;
+  
+    if (!selectedProvider || !insuranceNumber || !policyholderName || !relationshipToPolicyholder) {
+      return;
+    }
+  
+    const payload = {
+      userId: user.userId,
+      ...profileData,
+      insuranceProvider: selectedProvider.name,
+      ...updatedFormData,
+      insuranceCardImage,
+    };
+  
+    setLoading(true);
+  
+    try {
+      await AsyncStorage.setItem('insuranceData', JSON.stringify(payload));
+      dispatch(updateProfile(payload));
+    } catch (error) {
+      console.error('Error saving insurance data to AsyncStorage:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const debouncedSave = debounce(handleSave, 1000);
+  
+  const handleInputChange = async (field, value) => {
+    const updatedFormData = { ...formData, [field]: value };
+    setFormData(updatedFormData);
+    debouncedSave(updatedFormData);
+    try {
+      await AsyncStorage.setItem('insuranceData', JSON.stringify(updatedFormData));
+    } catch (error) {
+      console.error('Error saving insurance data to AsyncStorage:', error);
+    }
   };
 
   const handleEdit = (field) => {
     setEditingField(editingField === field ? null : field);
-  };
-
-  const handleSave = async () => {
-    const { insuranceNumber, groupNumber, policyholderName, relationshipToPolicyholder } = formData;
-
-    if (!selectedProvider || !insuranceNumber || !policyholderName || !relationshipToPolicyholder) {
-      Alert.alert('Error', 'Please fill in all required fields.');
-      return;
-    }
-
-    console.log('User ID:', user.userId); // Log the userId
-
-    const payload = {
-      userId: user.userId, // Include userId
-      ...profileData, // Include profile data
-      insuranceProvider: selectedProvider.name,
-      ...formData,
-      insuranceCardImage,
-    };
-
-    setLoading(true);
-
-    try {
-      const response = await fetch('https://project03-rj91.onrender.com/api/users/updatePatientProfile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user.token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        Alert.alert('Success', data.message);
-        dispatch(updateProfile(payload));
-        // Reset form and selected provider
-        setFormData({
-          insuranceNumber: '',
-          groupNumber: '',
-          policyholderName: '',
-          relationshipToPolicyholder: '',
-          effectiveDate: '',
-          expirationDate: '',
-        });
-        setSelectedProvider(null);
-        setInsuranceCardImage(null);
-        setEditingField(null);
-        router.back();
-      } else {
-        const errorData = await response.json();
-        Alert.alert('Error', errorData.message || 'Failed to update profile');
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
@@ -154,7 +155,6 @@ const InsuranceScreen = () => {
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         <EditableField
-          label="Insurance Number"
           value={formData.insuranceNumber}
           onChangeText={(value) => handleInputChange('insuranceNumber', value)}
           isEditing={editingField === 'insuranceNumber'}
@@ -163,7 +163,6 @@ const InsuranceScreen = () => {
           iconName="file-text"
         />
         <EditableField
-          label="Group Number"
           value={formData.groupNumber}
           onChangeText={(value) => handleInputChange('groupNumber', value)}
           isEditing={editingField === 'groupNumber'}
@@ -172,7 +171,6 @@ const InsuranceScreen = () => {
           iconName="hash"
         />
         <EditableField
-          label="Policyholder Name"
           value={formData.policyholderName}
           onChangeText={(value) => handleInputChange('policyholderName', value)}
           isEditing={editingField === 'policyholderName'}
@@ -181,7 +179,6 @@ const InsuranceScreen = () => {
           iconName="user"
         />
         <EditableField
-          label="Relationship to Policyholder"
           value={formData.relationshipToPolicyholder}
           onChangeText={(value) => handleInputChange('relationshipToPolicyholder', value)}
           isEditing={editingField === 'relationshipToPolicyholder'}
@@ -190,7 +187,6 @@ const InsuranceScreen = () => {
           iconName="users"
         />
         <EditableField
-          label="Effective Date"
           value={formData.effectiveDate}
           onChangeText={(value) => handleInputChange('effectiveDate', value)}
           isEditing={editingField === 'effectiveDate'}
@@ -199,7 +195,6 @@ const InsuranceScreen = () => {
           iconName="calendar"
         />
         <EditableField
-          label="Expiration Date"
           value={formData.expirationDate}
           onChangeText={(value) => handleInputChange('expirationDate', value)}
           isEditing={editingField === 'expirationDate'}
@@ -234,11 +229,6 @@ const InsuranceScreen = () => {
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#007BFF" />
         </View>
-      )}
-      {selectedProvider && (
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save</Text>
-        </TouchableOpacity>
       )}
     </SafeAreaView>
   );

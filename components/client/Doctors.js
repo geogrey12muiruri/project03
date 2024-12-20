@@ -34,36 +34,40 @@ const Doctors = ({ searchQuery }) => {
   return (
     <View style={{ marginTop: 10 }}>
       <SubHeading subHeadingTitle="Discover Doctors Near You" />
-      <FlatList
-        data={filteredDoctors}
-        horizontal
-        renderItem={({ item }) => (
-          <View style={styles.doctorItem}>
-            <Image
-              source={{
-                uri:
-                  item.profileImage ||
-                  'https://res.cloudinary.com/dws2bgxg4/image/upload/v1726073012/nurse_portrait_hospital_2d1bc0a5fc.jpg',
-              }}
-              style={styles.doctorImage}
-            />
-            <View style={styles.nameCategoryContainer}>
-              <Text style={styles.doctorName}>{item.name}</Text>
-              <Text style={styles.doctorName}>{item.specialty}</Text>
+      {filteredDoctors.length === 0 && searchQuery ? (
+        <Text>No results found</Text>
+      ) : (
+        <FlatList
+          data={filteredDoctors.length > 0 ? filteredDoctors : doctorList}
+          horizontal
+          renderItem={({ item }) => (
+            <View style={styles.doctorItem}>
+              <Image
+                source={{
+                  uri:
+                    item.profileImage ||
+                    'https://res.cloudinary.com/dws2bgxg4/image/upload/v1726073012/nurse_portrait_hospital_2d1bc0a5fc.jpg',
+                }}
+                style={styles.doctorImage}
+              />
+              <View style={styles.nameCategoryContainer}>
+                <Text style={styles.doctorName}>{item.name}</Text>
+                <Text style={styles.doctorName}>{item.specialty}</Text>
+              </View>
+              <Text>{item.clinicAddress || 'Location not specified'}</Text>
+              <TouchableOpacity
+                style={[styles.button, styles.consultButton]}
+                onPress={() => handleConsult(item.id)}
+              >
+                <Text style={styles.buttonText}>View</Text>
+              </TouchableOpacity>
             </View>
-            <Text>{item.clinicAddress || 'Location not specified'}</Text>
-            <TouchableOpacity
-              style={[styles.button, styles.consultButton]}
-              onPress={() => handleConsult(item.id)}
-            >
-              <Text style={styles.buttonText}>View</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        keyExtractor={(item, index) => `${item.id}-${index}`}
-        showsHorizontalScrollIndicator={false}
-        nestedScrollEnabled={true}
-      />
+          )}
+          keyExtractor={(item, index) => `${item.id}-${index}`}
+          showsHorizontalScrollIndicator={false}
+          nestedScrollEnabled={true}
+        />
+      )}
     </View>
   );
 };

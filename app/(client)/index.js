@@ -13,18 +13,20 @@ const Index = () => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        <SearchBar
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onSubmit={handleSearchSubmit}
-        />
-        <Category searchQuery={searchQuery} />
-        <Clinics searchQuery={searchQuery} />
-        <Doctors searchQuery={searchQuery} />
-      </View>
-    </ScrollView>
+    <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.container}>
+          <SearchBar
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onSubmit={handleSearchSubmit}
+          />
+          <Category searchQuery={searchQuery} />
+          <Clinics searchQuery={searchQuery} />
+          <Doctors searchQuery={searchQuery} />
+        </View>
+      </ScrollView>
+    </View>
   );
 };
 
