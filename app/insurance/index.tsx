@@ -118,6 +118,18 @@ const InsuranceScreen = () => {
         const data = await response.json();
         Alert.alert('Success', data.message);
         dispatch(updateProfile(payload));
+        // Reset form and selected provider
+        setFormData({
+          insuranceNumber: '',
+          groupNumber: '',
+          policyholderName: '',
+          relationshipToPolicyholder: '',
+          effectiveDate: '',
+          expirationDate: '',
+        });
+        setSelectedProvider(null);
+        setInsuranceCardImage(null);
+        setEditingField(null);
         router.back();
       } else {
         const errorData = await response.json();
