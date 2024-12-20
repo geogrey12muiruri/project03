@@ -51,13 +51,11 @@ export default function Category({ searchQuery }) {
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.PRIMARY} />
         </View>
-      ) : !filteredCategories.length ? (
-        <View style={styles.centered}>
-          <Text>No categories available</Text>
-        </View>
+      ) : filteredCategories.length === 0 && searchQuery ? (
+        <Text>No results found</Text>
       ) : (
         <FlatList
-          data={filteredCategories}
+          data={filteredCategories.length > 0 ? filteredCategories : categoryList}
           horizontal={true} // Enable horizontal scrolling
           showsHorizontalScrollIndicator={false} // Hide horizontal scroll indicator
           style={styles.flatList}

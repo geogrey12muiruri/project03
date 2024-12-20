@@ -1,46 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, ScrollView, Alert } from 'react-native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import HorizontalLine from '../../components/common/HorizontalLine';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
-import usePatientProfile  from '../../hooks/usePatientProfile';
+import usePatientProfile from '../../hooks/usePatientProfile';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateProfile } from '../(redux)/authSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProfileScreen = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const { patientProfile, pickImage } = usePatientProfile();
-  const user = useSelector((state) => state.auth.user); // Get user data from Redux
-  const [fullName, setFullName] = useState('');
-  const [dob, setDob] = useState(new Date());
+  const profileData = useSelector((state) => state.auth.profileData); // Get profile data from Redux
+  const [fullName, setFullName] = useState(profileData.fullName || '');
+  const [dob, setDob] = useState(new Date(profileData.dob) || new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [gender, setGender] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [address, setAddress] = useState({
+  const [gender, setGender] = useState(profileData.gender || '');
+  const [phoneNumber, setPhoneNumber] = useState(profileData.phoneNumber || '');
+  const [address, setAddress] = useState(profileData.address || {
     street: '',
     city: '',
     state: '',
     zipCode: '',
   });
-  const [emergencyContact, setEmergencyContact] = useState('');
+  const [emergencyContact, setEmergencyContact] = useState(profileData.emergencyContact || '');
   const [editingField, setEditingField] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const loadProfileData = async () => {
+      try {
+        const storedProfileData = await AsyncStorage.getItem('profileData');
+        if (storedProfileData) {
+          const parsedProfileData = JSON.parse(storedProfileData);
+          setFullName(parsedProfileData.fullName);
+          setDob(new Date(parsedProfileData.dob));
+          setGender(parsedProfileData.gender);
+          setPhoneNumber(parsedProfileData.phoneNumber);
+          setAddress(parsedProfileData.address);
+          setEmergencyContact(parsedProfileData.emergencyContact);
+        }
+      } catch (error) {
+        console.error('Failed to load profile data', error);
+      }
+    };
+    loadProfileData();
+  }, []);
+
+  const saveProfileData = async (updatedData) => {
+    try {
+      await AsyncStorage.setItem('profileData', JSON.stringify(updatedData));
+      dispatch(updateProfile(updatedData));
+    } catch (error) {
+      console.error('Failed to save profile data', error);
+    }
+  };
 
   const handleEdit = (field) => {
     setEditingField(editingField === field ? null : field);
   };
 
-  const handleDateChange = (event, selectedDate) => {
-    const currentDate = selectedDate || dob;
-    setShowDatePicker(false);
-    setDob(currentDate);
-  };
-
-  const handleSaveProfile = () => {
-    const profileData = {
-      userId: user.userId, // Include userId
+  const handleSave = (field, value) => {
+    setLoading(true);
+    const updatedData = {
       fullName,
       dob,
       gender,
@@ -48,14 +73,61 @@ const ProfileScreen = () => {
       address,
       emergencyContact,
     };
+    switch (field) {
+      case 'fullName':
+        updatedData.fullName = value;
+        setFullName(value);
+        break;
+      case 'dob':
+        updatedData.dob = new Date(value);
+        setDob(new Date(value));
+        break;
+      case 'gender':
+        updatedData.gender = value;
+        setGender(value);
+        break;
+      case 'phoneNumber':
+        updatedData.phoneNumber = value;
+        setPhoneNumber(value);
+        break;
+      case 'emergencyContact':
+        updatedData.emergencyContact = value;
+        setEmergencyContact(value);
+        break;
+      case 'street':
+        updatedData.address.street = value;
+        setAddress({ ...address, street: value });
+        break;
+      case 'city':
+        updatedData.address.city = value;
+        setAddress({ ...address, city: value });
+        break;
+      case 'state':
+        updatedData.address.state = value;
+        setAddress({ ...address, state: value });
+        break;
+      case 'zipCode':
+        updatedData.address.zipCode = value;
+        setAddress({ ...address, zipCode: value });
+        break;
+      default:
+        break;
+    }
+    saveProfileData(updatedData);
+    setLoading(false);
+    setEditingField(null);
+  };
 
-    dispatch(updateProfile(profileData)); // Store profile data in Redux
-    router.push('/insurance'); // Navigate to insurance screen
+  const handleDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || dob;
+    setShowDatePicker(false);
+    setDob(currentDate);
+    handleSave('dob', currentDate);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <FeatherIcon name="arrow-left" size={24} color="#000" />
@@ -63,58 +135,53 @@ const ProfileScreen = () => {
           <Text style={styles.headerTitle}>Profile</Text>
         </View>
         <View style={styles.profileSection}>
-          <TouchableOpacity style={styles.profileImageWrapper} onPress={pickImage}>
-            {patientProfile.picture ? (
-              <Image source={{ uri: patientProfile.picture }} style={styles.profileImage} />
-            ) : (
-              <FeatherIcon name="camera" size={50} color="#ccc" />
-            )}
-            <View style={styles.editIconWrapper}>
-              <FeatherIcon name="edit-3" size={18} color="#fff" />
-            </View>
-          </TouchableOpacity>
+          <View style={styles.profileBackground}>
+            <TouchableOpacity style={styles.profileImageWrapper} onPress={pickImage}>
+              {patientProfile.picture ? (
+                <Image source={{ uri: patientProfile.picture }} style={styles.profileImage} />
+              ) : (
+                <FeatherIcon name="camera" size={50} color="#ccc" />
+              )}
+              <View style={styles.editIconWrapper}>
+                <FeatherIcon name="edit-3" size={18} color="#fff" />
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
         <HorizontalLine />
-        {/* Editable Fields */}
         <EditableField
-          label="Full Name"
           value={fullName}
-          onChangeText={setFullName}
           isEditing={editingField === 'fullName'}
           onEdit={() => handleEdit('fullName')}
+          onSave={(value) => handleSave('fullName', value)}
           iconColor="#007bff"
           iconName="user"
         />
-        <View style={styles.inputContainer}>
-          <View style={styles.inputWrapper}>
-            <View style={[styles.inputIconWrapper, { backgroundColor: '#fe9400' }]}>
-              <FeatherIcon name="calendar" size={20} color="#fff" />
-            </View>
-            <Text style={styles.inputLabel}>Date of Birth</Text>
-            <Text style={styles.inputValue}>{dob.toDateString()}</Text>
-            <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-              <FeatherIcon name="edit-3" size={20} color="#fe9400" />
-            </TouchableOpacity>
-          </View>
-          {showDatePicker && (
-            <DateTimePicker
-              value={dob}
-              mode="date"
-              display="default"
-              onChange={handleDateChange}
-            />
-          )}
-        </View>
+        <EditableField
+          value={dob.toDateString()}
+          isEditing={editingField === 'dob'}
+          onEdit={() => setShowDatePicker(true)}
+          onSave={(value) => handleSave('dob', value)}
+          iconColor="#ff6347"
+          iconName="calendar"
+        />
+        {showDatePicker && (
+          <DateTimePicker
+            value={dob}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+          />
+        )}
         <View style={styles.inputContainer}>
           <View style={styles.inputWrapper}>
             <View style={[styles.inputIconWrapper, { backgroundColor: '#32c759' }]}>
               <FeatherIcon name="user-check" size={20} color="#fff" />
             </View>
-            <Text style={styles.inputLabel}>Gender</Text>
             <Picker
               selectedValue={gender}
               style={styles.picker}
-              onValueChange={(itemValue) => setGender(itemValue)}
+              onValueChange={(itemValue) => handleSave('gender', itemValue)}
             >
               <Picker.Item label="Select Gender" value="" />
               <Picker.Item label="Male" value="male" />
@@ -124,65 +191,58 @@ const ProfileScreen = () => {
           </View>
         </View>
         <EditableField
-          label="Phone Number"
           value={phoneNumber}
-          onChangeText={setPhoneNumber}
           isEditing={editingField === 'phoneNumber'}
           onEdit={() => handleEdit('phoneNumber')}
+          onSave={(value) => handleSave('phoneNumber', value)}
           iconColor="#007afe"
           iconName="phone"
         />
         <HorizontalLine />
-        <Text style={styles.sectionTitle}>Address</Text>
         <EditableField
-          label="Street"
           value={address.street}
-          onChangeText={(text) => setAddress({ ...address, street: text })}
           isEditing={editingField === 'street'}
           onEdit={() => handleEdit('street')}
+          onSave={(value) => handleSave('street', value)}
           iconColor="#007bff"
           iconName="map-pin"
         />
         <EditableField
-          label="City"
           value={address.city}
-          onChangeText={(text) => setAddress({ ...address, city: text })}
           isEditing={editingField === 'city'}
           onEdit={() => handleEdit('city')}
+          onSave={(value) => handleSave('city', value)}
           iconColor="#fe9400"
           iconName="map"
         />
         <EditableField
-          label="State"
           value={address.state}
-          onChangeText={(text) => setAddress({ ...address, state: text })}
           isEditing={editingField === 'state'}
           onEdit={() => handleEdit('state')}
+          onSave={(value) => handleSave('state', value)}
           iconColor="#32c759"
           iconName="map"
         />
         <EditableField
-          label="Zip Code"
           value={address.zipCode}
-          onChangeText={(text) => setAddress({ ...address, zipCode: text })}
           isEditing={editingField === 'zipCode'}
           onEdit={() => handleEdit('zipCode')}
+          onSave={(value) => handleSave('zipCode', value)}
           iconColor="#007afe"
           iconName="map-pin"
         />
         <HorizontalLine />
         <EditableField
-          label="Emergency Contact"
           value={emergencyContact}
-          onChangeText={setEmergencyContact}
           isEditing={editingField === 'emergencyContact'}
           onEdit={() => handleEdit('emergencyContact')}
+          onSave={(value) => handleSave('emergencyContact', value)}
           iconColor="#ff6347"
           iconName="phone-call"
         />
         <HorizontalLine />
-        <TouchableOpacity style={styles.row} onPress={handleSaveProfile}>
-          <Text style={styles.sectionLinkText}>Next: Insurance Provider</Text>
+        <TouchableOpacity style={styles.navigationButton} onPress={() => router.push('/insurance')}>
+          <Text style={styles.navigationButtonText}>Next: Insurance Provider</Text>
           <FeatherIcon name="chevron-right" size={20} color="#007bff" />
         </TouchableOpacity>
       </ScrollView>
@@ -190,33 +250,47 @@ const ProfileScreen = () => {
   );
 };
 
-const EditableField = ({ label, value, onChangeText, isEditing, onEdit, iconColor, iconName }) => (
-  <View style={styles.inputContainer}>
-    <View style={styles.inputWrapper}>
-      <View style={[styles.inputIconWrapper, { backgroundColor: iconColor }]}>
-        <FeatherIcon name={iconName} size={20} color="#fff" />
+const EditableField = ({ value, isEditing, onEdit, onSave, iconColor, iconName }) => {
+  const [inputValue, setInputValue] = useState(value);
+
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  const handleBlur = () => {
+    onSave(inputValue);
+  };
+
+  return (
+    <View style={styles.inputContainer}>
+      <View style={styles.inputWrapper}>
+        <View style={[styles.inputIconWrapper, { backgroundColor: iconColor }]}>
+          <FeatherIcon name={iconName} size={20} color="#fff" />
+        </View>
+        <Text style={styles.inputValue}>{value || `Enter value`}</Text>
+        <TouchableOpacity onPress={onEdit}>
+          <FeatherIcon name="edit-3" size={20} color={iconColor} />
+        </TouchableOpacity>
       </View>
-      <Text style={styles.inputLabel}>{label}</Text>
-      <Text style={styles.inputValue}>{value || `Enter ${label}`}</Text>
-      <TouchableOpacity onPress={onEdit}>
-        <FeatherIcon name="edit-3" size={20} color={iconColor} />
-      </TouchableOpacity>
+      {isEditing && (
+        <TextInput
+          style={styles.input}
+          placeholder={`Enter value`}
+          value={inputValue}
+          onChangeText={setInputValue}
+          onBlur={handleBlur}
+        />
+      )}
     </View>
-    {isEditing && (
-      <TextInput
-        style={styles.input}
-        placeholder={`Enter ${label}`}
-        value={value}
-        onChangeText={onChangeText}
-      />
-    )}
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'linear-gradient(to bottom, #f7f7f7, #e8e8e8)',
+    backgroundColor: '#f7f7f7',
+  },
+  scrollViewContent: {
     padding: 20,
   },
   header: {
@@ -243,6 +317,12 @@ const styles = StyleSheet.create({
   profileSection: {
     alignItems: 'center',
     marginBottom: 16,
+  },
+  profileBackground: {
+    backgroundColor: '#e8f4ff',
+    padding: 20,
+    borderRadius: 8,
+    alignItems: 'center',
   },
   profileImageWrapper: {
     width: 100,
@@ -274,6 +354,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    marginHorizontal: 10, // Add margin to the sides
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -310,6 +391,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginVertical: 8,
     color: '#333',
+    marginHorizontal: 10, // Add margin to the sides
   },
   picker: {
     height: 50,
@@ -325,6 +407,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#007bff',
   },
+  saveIconWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
   saveButton: {
     backgroundColor: '#007BFF',
     padding: 16,
@@ -336,6 +423,20 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
+  },
+  navigationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: '#f2f2f2',
+    marginHorizontal: 8,
+  },
+  navigationButtonText: {
+    fontSize: 16,
+    color: '#007bff',
+    marginHorizontal: 8,
   },
 });
 

@@ -167,13 +167,17 @@ const Clinics = ({ searchQuery, onViewAll }) => {
   return (
     <Animated.View style={{ marginTop: 10, opacity: fadeAnim }}>
       <SubHeading subHeadingTitle={'Discover Clinics Near You'} onViewAll={onViewAll} />
-      <FlatList
-        data={filteredClinics}
-        horizontal={true}
-        renderItem={({ item }) => <ClinicItem item={item} />}
-        keyExtractor={(item) => item._id?.toString() || `temp-${Math.random()}`}
-        showsHorizontalScrollIndicator={false}
-      />
+      {filteredClinics.length === 0 && searchQuery ? (
+        <Text>No results found</Text>
+      ) : (
+        <FlatList
+          data={filteredClinics.length > 0 ? filteredClinics : clinics}
+          horizontal={true}
+          renderItem={({ item }) => <ClinicItem item={item} />}
+          keyExtractor={(item) => item._id?.toString() || `temp-${Math.random()}`}
+          showsHorizontalScrollIndicator={false}
+        />
+      )}
     </Animated.View>
   );
 };

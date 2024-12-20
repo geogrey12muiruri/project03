@@ -123,7 +123,14 @@ const authSlice = createSlice({
       state.profileImage = action.payload;
     },
     updateProfile: (state, action) => {
-      state.profileData = action.payload; // Update profile data
+      state.profileData = {
+        ...state.profileData,
+        ...action.payload,
+        address: {
+          ...state.profileData.address,
+          ...action.payload.address,
+        },
+      }; // Merge new profile data with existing profile data
     },
     updateInsurance: (state, action) => {
       state.insuranceData = action.payload; // Update insurance data
