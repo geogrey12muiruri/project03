@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
-const User = require("../models/user.model"); // Correct the path to the user model
+const User = require("../models/User"); // Correct the path to the user model
 const nodemailer = require("nodemailer");
 const Professional = require("../models/professional.model"); 
 
