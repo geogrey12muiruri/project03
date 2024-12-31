@@ -34,15 +34,14 @@ const calculateProfileCompletion = (profile) => {
 
 const userCtrl = {
   register: asyncHandler(async (req, res) => {
-    let { email, password, firstName, lastName, userType } = req.body;
-    console.log({ email, password, firstName, lastName, userType });
+    let { email, password, firstName, lastName } = req.body;
+    console.log({ email, password, firstName, lastName });
 
     if (typeof email === 'object' && email.email) {
       email = email.email;
       password = email.password;
       firstName = email.firstName;
       lastName = email.lastName;
-      userType = email.userType;
     }
 
     if (!email || !password || !firstName || !lastName) {
@@ -73,17 +72,15 @@ const userCtrl = {
       verificationCode,
       verificationCodeExpires: expirationTime,
       isVerified: false,
-      userType,
+      userType: 'professional', // Set userType to professional by default
     });
 
-    // If the userType is professional, create a Professional record
-    if (userType === "professional") {
-      await Professional.create({
-        firstName,
-        lastName,
-        user: userCreated._id, // Link to the user model
-      });
-    }
+    // Create a Professional record
+    await Professional.create({
+      firstName,
+      lastName,
+      user: userCreated._id, // Link to the user model
+    });
 
     // Send verification email
     await sendVerificationEmail(email, verificationCode);
@@ -100,7 +97,7 @@ const userCtrl = {
       message: "Verification email sent",
     });
   }),
-
+};
   login: asyncHandler(async (req, res) => {
     let { email, password } = req.body;
 
