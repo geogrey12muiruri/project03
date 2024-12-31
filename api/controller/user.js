@@ -97,7 +97,7 @@ const userCtrl = {
       message: "Verification email sent",
     });
   }),
-};
+
   login: asyncHandler(async (req, res) => {
     let { email, password } = req.body;
 
