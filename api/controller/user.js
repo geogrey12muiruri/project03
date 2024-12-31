@@ -1,8 +1,9 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
-const User = require("../model/User");
-const nodemailer = require("nodemailer"); // Import nodemailer
+const User = require("../models/user.model"); // Correct the path to the user model
+const nodemailer = require("nodemailer");
+const Professional = require("../models/professional.model"); 
 
 // Nodemailer transporter configuration
 const transporter = nodemailer.createTransport({
@@ -26,38 +27,43 @@ const sendVerificationEmail = async (email, verificationCode) => {
 };
 
 const calculateProfileCompletion = (profile) => {
-  const fields = ["fullName", "dateOfBirth", "gender", "insuranceProvider"];
+  const fields = ["firstName", "lastName", "dateOfBirth", "gender", "insuranceProvider"];
   const filledFields = fields.filter(field => profile[field]);
   return (filledFields.length / fields.length) * 100;
 };
 
 const userCtrl = {
   register: asyncHandler(async (req, res) => {
-    let { email, password, firstName, lastName } = req.body;
-    console.log({ email, password, firstName, lastName });
-  
+    let { email, password, firstName, lastName, userType } = req.body;
+    console.log({ email, password, firstName, lastName, userType });
+
     if (typeof email === 'object' && email.email) {
       email = email.email;
       password = email.password;
       firstName = email.firstName;
       lastName = email.lastName;
+      userType = email.userType;
     }
+
     if (!email || !password || !firstName || !lastName) {
       throw new Error("Please all fields are required");
     }
-    //! check if user already exists
+
+    // Check if user already exists
     const userExits = await User.findOne({ email: String(email) });
-    // console.log("userExits", userExits);
     if (userExits) {
       throw new Error("User already exists");
     }
-    //! Hash the user password
+
+    // Hash the user password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    //! Generate a verification code
+
+    // Generate a verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expirationTime = Date.now() + 15 * 60 * 1000; // Set expiration time to 15 minutes
-    //!Create the user
+
+    // Create the user
     const userCreated = await User.create({
       username: `${firstName} ${lastName}`, // Construct username
       firstName,
@@ -67,10 +73,22 @@ const userCtrl = {
       verificationCode,
       verificationCodeExpires: expirationTime,
       isVerified: false,
+      userType,
     });
-    //!Send verification email
+
+    // If the userType is professional, create a Professional record
+    if (userType === "professional") {
+      await Professional.create({
+        firstName,
+        lastName,
+        user: userCreated._id, // Link to the user model
+      });
+    }
+
+    // Send verification email
     await sendVerificationEmail(email, verificationCode);
-    //!Send the response
+
+    // Send the response
     console.log("userCreated", userCreated);
     res.json({
       username: userCreated.username,
@@ -78,43 +96,54 @@ const userCtrl = {
       id: userCreated.id,
       firstName: userCreated.firstName,
       lastName: userCreated.lastName,
+      userType: userCreated.userType,
       message: "Verification email sent",
     });
   }),
-  //!Login
+
   login: asyncHandler(async (req, res) => {
     let { email, password } = req.body;
-    //!Check if user email exists
+
+    // Check if user email is nested in an object
     if (typeof email === 'object' && email.email) {
       email = email.email;
       password = email.password;
     }
-    const user = await User.findOne({ email: String(email) }); // Search for the user in the database
-    console.log("user backend", user);
+
+    // Find the user in the database
+    const user = await User.findOne({ email: String(email) });
+
+    console.log("User backend:", user);
+
     if (!user) {
       throw new Error("Invalid credentials");
     }
-    //! Check if the user registered with Google
+
+    // Check if the user registered with Google
     if (user.loginMethod === "google") {
       throw new Error("Please use Google login to access your account.");
     }
-    //!Check if user password is valid
+
+    // Validate user password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       throw new Error("Invalid credentials");
     }
-    //! Generate the token
-    const token = jwt.sign({ id: user._id }, "anyKey", { expiresIn: "30d" }); // Ensure token expiration is set correctly
-    //!Send the response
+
+    // Generate JWT token
+    const token = jwt.sign({ id: user._id }, "anyKey", { expiresIn: "30d" });
+
+    // Exclude sensitive information (like password) before sending the user object
+    const { password: _, ...userWithoutPassword } = user.toObject();
+
+    // Send the response
     res.json({
       message: "Login success",
       token,
-      id: user._id,
-      email: user.email,
-      username: user.username,
+      user: userWithoutPassword,
     });
   }),
-  //!Google Login
+
   googleLogin: asyncHandler(async (req, res) => {
     const { email, firstname, lastname } = req.body;
     let user = await User.findOne({ email });
@@ -147,7 +176,7 @@ const userCtrl = {
       userId: user._id, // Include userId in the response
     });
   }),
-  //!Profile
+
   profile: asyncHandler(async (req, res) => {
     if (!req.user || !req.user.id) {
       res.status(400).json({ message: "User ID is missing" });
@@ -160,7 +189,7 @@ const userCtrl = {
     }
     res.json({ user: user || null });
   }),
-  //!Set Password
+
   setPassword: asyncHandler(async (req, res) => {
     const { userId, password } = req.body;
     if (!password) {
@@ -175,7 +204,7 @@ const userCtrl = {
     await user.save();
     res.json({ message: "Password set successfully" });
   }),
-  //!Verify Email
+
   verifyEmail: asyncHandler(async (req, res) => {
     try {
       const { email, verificationCode } = req.body;
@@ -205,6 +234,7 @@ const userCtrl = {
       res.status(500).json({ error: 'Internal server error' });
     }
   }),
+
   updatePatientProfile: asyncHandler(async (req, res) => {
     const { userId, fullName, dateOfBirth, gender, insuranceProvider, insuranceNumber, groupNumber, policyholderName, relationshipToPolicyholder, effectiveDate, expirationDate, insuranceCardImage, preferences, address, phoneNumber, emergencyContact } = req.body;
     const user = await User.findById(userId);
@@ -257,4 +287,5 @@ const userCtrl = {
     });
   }),
 };
+
 module.exports = userCtrl;
