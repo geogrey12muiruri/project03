@@ -1,9 +1,9 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
-const User = require("../model/User"); // Correct the path to the user model
+const User = require("../models/user.model"); // Correct the path to the user model
 const nodemailer = require("nodemailer");
-const Professional = require("../model/professional.model"); 
+const Professional = require("../models/professional.model"); 
 
 // Nodemailer transporter configuration
 const transporter = nodemailer.createTransport({
@@ -34,14 +34,15 @@ const calculateProfileCompletion = (profile) => {
 
 const userCtrl = {
   register: asyncHandler(async (req, res) => {
-    let { email, password, firstName, lastName } = req.body;
-    console.log({ email, password, firstName, lastName });
+    let { email, password, firstName, lastName, userType } = req.body;
+    console.log({ email, password, firstName, lastName, userType });
 
     if (typeof email === 'object' && email.email) {
       email = email.email;
       password = email.password;
       firstName = email.firstName;
       lastName = email.lastName;
+      userType = email.userType;
     }
 
     if (!email || !password || !firstName || !lastName) {
@@ -72,15 +73,17 @@ const userCtrl = {
       verificationCode,
       verificationCodeExpires: expirationTime,
       isVerified: false,
-      userType: 'professional', // Set userType to professional by default
+      userType,
     });
 
-    // Create a Professional record
-    await Professional.create({
-      firstName,
-      lastName,
-      user: userCreated._id, // Link to the user model
-    });
+    // If the userType is professional, create a Professional record
+    if (userType === "professional") {
+      await Professional.create({
+        firstName,
+        lastName,
+        user: userCreated._id, // Link to the user model
+      });
+    }
 
     // Send verification email
     await sendVerificationEmail(email, verificationCode);
@@ -232,6 +235,41 @@ const userCtrl = {
     }
   }),
 
+  updateProfile: asyncHandler(async (req, res) => {
+    const {
+      userId,
+      fullName,
+      email,
+      phoneNumber,
+      profileImage,
+    } = req.body;
+
+    // Ensure that the user exists in the database
+    const user = await User.findById(userId);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Update user profile with the provided data
+    user.fullName = fullName || user.fullName;
+    user.email = email || user.email;
+    user.phoneNumber = phoneNumber || user.phoneNumber;
+    user.profileImage = profileImage || user.profileImage;
+
+    // Save the updated user profile
+    await user.save();
+
+    // Send a success response with the updated data
+    res.json({
+      message: "Profile updated successfully",
+      profileImage: user.profileImage,
+      fullName: user.fullName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+    });
+  }),
+
   updatePatientProfile: asyncHandler(async (req, res) => {
     const { userId, fullName, dateOfBirth, gender, insuranceProvider, insuranceNumber, groupNumber, policyholderName, relationshipToPolicyholder, effectiveDate, expirationDate, insuranceCardImage, preferences, address, phoneNumber, emergencyContact } = req.body;
     const user = await User.findById(userId);
@@ -282,6 +320,39 @@ const userCtrl = {
       message: "Profile updated successfully",
       profileCompletion,
     });
+  }),
+
+  resetPassword: asyncHandler(async (req, res) => {
+    const { email, newPassword, verificationCode } = req.body;
+
+    // Find the user by email
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid email' });
+    }
+
+    // Check if the verification code is correct and not expired
+    if (user.verificationCode !== verificationCode) {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
+
+    if (Date.now() > user.verificationCodeExpires) {
+      return res.status(400).json({ error: 'Verification code has expired' });
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    // Clear the verification code and expiration time
+    user.verificationCode = undefined;
+    user.verificationCodeExpires = undefined;
+
+    // Save the updated user
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successfully!' });
   }),
 };
 
