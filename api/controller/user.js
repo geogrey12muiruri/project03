@@ -322,6 +322,31 @@ const userCtrl = {
     });
   }),
 
+  requestPasswordReset: asyncHandler(async (req, res) => {
+    const { email } = req.body;
+
+    // Find the user by email
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid email' });
+    }
+
+    // Generate a verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expirationTime = Date.now() + 15 * 60 * 1000; // Set expiration time to 15 minutes
+
+    // Update the user with the verification code and expiration time
+    user.verificationCode = verificationCode;
+    user.verificationCodeExpires = expirationTime;
+    await user.save();
+
+    // Send verification email
+    await sendVerificationEmail(email, verificationCode);
+
+    res.status(200).json({ message: 'Verification code sent to email!' });
+  }),
+
   resetPassword: asyncHandler(async (req, res) => {
     const { email, newPassword, verificationCode } = req.body;
 
