@@ -13,5 +13,6 @@ router.post("/api/users/set-password", isAuthenticated, userCtrl.setPassword);
 router.post("/api/users/verify-email", userCtrl.verifyEmail);
 router.post("/api/users/updatePatientProfile", isAuthenticated, userCtrl.updatePatientProfile);
 router.post("/api/users/reset-password", userCtrl.resetPassword);
+router.post("/api/users/request-password-reset", userCtrl.requestPasswordReset);
 
 module.exports = router;
