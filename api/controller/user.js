@@ -136,11 +136,21 @@ const userCtrl = {
     // Exclude sensitive information (like password) before sending the user object
     const { password: _, ...userWithoutPassword } = user.toObject();
 
+    // Find the professional record if the user is a professional
+    let professionalId = null;
+    if (user.userType === "professional") {
+      const professional = await Professional.findOne({ user: user._id });
+      if (professional) {
+        professionalId = professional._id;
+      }
+    }
+
     // Send the response
     res.json({
       message: "Login success",
       token,
       user: userWithoutPassword,
+      professionalId, // Include professionalId in the response
     });
   }),
 
