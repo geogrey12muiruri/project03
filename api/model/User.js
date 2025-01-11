@@ -50,7 +50,7 @@ const userSchema = new mongoose.Schema(
     // New userType field
     userType: {
       type: String,
-      enum: ["professional", "client"],
+      enum: ["professional", "patient"],
       required: true,
     },
   },
