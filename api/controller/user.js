@@ -1,17 +1,17 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
-const User = require("../model/User"); // Correct the path to the user model
+const User = require("../model/User");
 const nodemailer = require("nodemailer");
-const Professional = require("../model/professional.model"); 
-const Patient = require("../models/patient.model")
+const Professional = require("../model/professional.model");
+const Patient = require("../models/patient.model");
 
 // Nodemailer transporter configuration
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: "gmail",
   auth: {
-    user: 'medpluscollaborate@gmail.com',
-    pass: 'agdr yire cfhm ukvv'
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
@@ -20,54 +20,40 @@ const sendVerificationEmail = async (email, verificationCode) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: 'Email Verification',
+    subject: "Email Verification",
     text: `Your verification code is: ${verificationCode}`,
   };
-  
+
   return transporter.sendMail(mailOptions);
 };
 
+// Calculate profile completion percentage
 const calculateProfileCompletion = (profile) => {
   const fields = ["firstName", "lastName", "dateOfBirth", "gender", "insuranceProvider"];
-  const filledFields = fields.filter(field => profile[field]);
+  const filledFields = fields.filter((field) => profile[field]);
   return (filledFields.length / fields.length) * 100;
 };
 
+// User Controller
 const userCtrl = {
   register: asyncHandler(async (req, res) => {
     let { email, password, firstName, lastName, userType } = req.body;
 
-    console.log({ email, password, firstName, lastName, userType });
-
-    // Handle nested email object (if applicable)
-    if (typeof email === 'object' && email.email) {
-      email = email.email;
-      password = email.password;
-      firstName = email.firstName;
-      lastName = email.lastName;
-      userType = email.userType;
-    }
-
-    // Validate required fields
     if (!email || !password || !firstName || !lastName || !userType) {
       throw new Error("All fields are required, including userType.");
     }
 
-    // Check if the user already exists
     const userExists = await User.findOne({ email: String(email) });
     if (userExists) {
       throw new Error("User already exists.");
     }
 
-    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Generate a verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expirationTime = Date.now() + 15 * 60 * 1000; // 15 minutes
+    const expirationTime = Date.now() + 15 * 60 * 1000;
 
-    // Create the user
     const userCreated = await User.create({
       username: `${firstName} ${lastName}`,
       firstName,
@@ -80,20 +66,17 @@ const userCtrl = {
       userType,
     });
 
-    // Additional handling based on userType
     if (userType === "professional") {
-      // Create a Professional record
       await Professional.create({
         firstName,
         lastName,
-        user: userCreated._id, // Link to the user model
+        user: userCreated._id,
       });
     } else if (userType === "patient") {
-      // Create a Patient record
       await Patient.create({
         name: `${firstName} ${lastName}`,
         email: String(email),
-        userId: userCreated._id, // Link to the user model
+        userId: userCreated._id,
       });
     } else {
       throw new Error("Invalid userType. Must be 'professional' or 'patient'.");
@@ -104,45 +87,29 @@ const userCtrl = {
       userId: userCreated._id,
     });
   }),
-};
 
-
+  // Login Functionality
   login: asyncHandler(async (req, res) => {
     let { email, password } = req.body;
 
-    // Check if user email is nested in an object
-    if (typeof email === 'object' && email.email) {
-      email = email.email;
-      password = email.password;
-    }
-
-    // Find the user in the database
     const user = await User.findOne({ email: String(email) });
-
-    console.log("User backend:", user);
-
     if (!user) {
       throw new Error("Invalid credentials");
     }
 
-    // Check if the user registered with Google
     if (user.loginMethod === "google") {
       throw new Error("Please use Google login to access your account.");
     }
 
-    // Validate user password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       throw new Error("Invalid credentials");
     }
 
-    // Generate JWT token
-    const token = jwt.sign({ id: user._id }, "anyKey", { expiresIn: "30d" });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 
-    // Exclude sensitive information (like password) before sending the user object
     const { password: _, ...userWithoutPassword } = user.toObject();
 
-    // Find the professional record if the user is a professional
     let professionalId = null;
     if (user.userType === "professional") {
       const professional = await Professional.findOne({ user: user._id });
@@ -151,15 +118,46 @@ const userCtrl = {
       }
     }
 
-    // Send the response
     res.json({
       message: "Login success",
       token,
       user: userWithoutPassword,
-      professionalId, // Include professionalId in the response
+      professionalId,
     });
   }),
 
+  // Remaining methods (profile, googleLogin, verifyEmail, etc.)...
+
+  updatePatientProfile: asyncHandler(async (req, res) => {
+    const { userId, fullName, preferences, ...otherFields } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const [firstName, lastName] = fullName ? fullName.split(" ") : [user.firstName, user.lastName];
+    user.firstName = firstName;
+    user.lastName = lastName;
+
+    Object.assign(user, otherFields);
+
+    if (preferences) {
+      user.preferences = {
+        ...user.preferences,
+        ...preferences,
+      };
+    }
+
+    await user.save();
+
+    res.json({
+      message: "Profile updated successfully",
+      user,
+    });
+  }),
+
+  
   googleLogin: asyncHandler(async (req, res) => {
     const { email, firstname, lastname } = req.body;
     let user = await User.findOne({ email });
@@ -396,5 +394,7 @@ const userCtrl = {
     res.status(200).json({ message: 'Password reset successfully!' });
   }),
 };
+
+
 
 module.exports = userCtrl;
