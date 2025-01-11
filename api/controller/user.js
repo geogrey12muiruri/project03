@@ -36,8 +36,10 @@ const calculateProfileCompletion = (profile) => {
 const userCtrl = {
   register: asyncHandler(async (req, res) => {
     let { email, password, firstName, lastName, userType } = req.body;
+
     console.log({ email, password, firstName, lastName, userType });
 
+    // Handle nested email object (if applicable)
     if (typeof email === 'object' && email.email) {
       email = email.email;
       password = email.password;
@@ -46,27 +48,28 @@ const userCtrl = {
       userType = email.userType;
     }
 
-    if (!email || !password || !firstName || !lastName) {
-      throw new Error("Please all fields are required");
+    // Validate required fields
+    if (!email || !password || !firstName || !lastName || !userType) {
+      throw new Error("All fields are required, including userType.");
     }
 
-    // Check if user already exists
-    const userExits = await User.findOne({ email: String(email) });
-    if (userExits) {
-      throw new Error("User already exists");
+    // Check if the user already exists
+    const userExists = await User.findOne({ email: String(email) });
+    if (userExists) {
+      throw new Error("User already exists.");
     }
 
-    // Hash the user password
+    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Generate a verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expirationTime = Date.now() + 15 * 60 * 1000; // Set expiration time to 15 minutes
+    const expirationTime = Date.now() + 15 * 60 * 1000; // 15 minutes
 
     // Create the user
     const userCreated = await User.create({
-      username: `${firstName} ${lastName}`, // Construct username
+      username: `${firstName} ${lastName}`,
       firstName,
       lastName,
       password: hashedPassword,
@@ -77,30 +80,32 @@ const userCtrl = {
       userType,
     });
 
-    // If the userType is professional, create a Professional record
+    // Additional handling based on userType
     if (userType === "professional") {
+      // Create a Professional record
       await Professional.create({
         firstName,
         lastName,
         user: userCreated._id, // Link to the user model
       });
+    } else if (userType === "patient") {
+      // Create a Patient record
+      await Patient.create({
+        name: `${firstName} ${lastName}`,
+        email: String(email),
+        userId: userCreated._id, // Link to the user model
+      });
+    } else {
+      throw new Error("Invalid userType. Must be 'professional' or 'patient'.");
     }
 
-    // Send verification email
-    await sendVerificationEmail(email, verificationCode);
-
-    // Send the response
-    console.log("userCreated", userCreated);
-    res.json({
-      username: userCreated.username,
-      email: userCreated.email,
-      id: userCreated.id,
-      firstName: userCreated.firstName,
-      lastName: userCreated.lastName,
-      userType: userCreated.userType,
-      message: "Verification email sent",
+    res.status(201).json({
+      message: "User registered successfully",
+      userId: userCreated._id,
     });
   }),
+};
+
 
   login: asyncHandler(async (req, res) => {
     let { email, password } = req.body;
