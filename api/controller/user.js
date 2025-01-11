@@ -4,6 +4,7 @@ const asyncHandler = require("express-async-handler");
 const User = require("../model/User"); // Correct the path to the user model
 const nodemailer = require("nodemailer");
 const Professional = require("../model/professional.model"); 
+const Patient = require("../models/patient.model")
 
 // Nodemailer transporter configuration
 const transporter = nodemailer.createTransport({
