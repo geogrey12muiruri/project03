@@ -4,7 +4,7 @@ const asyncHandler = require("express-async-handler");
 const User = require("../model/User");
 const nodemailer = require("nodemailer");
 const Professional = require("../model/professional.model");
-const Patient = require("../models/patient.model");
+const Patient = require("../model/patient.model");
 
 // Nodemailer transporter configuration
 const transporter = nodemailer.createTransport({
