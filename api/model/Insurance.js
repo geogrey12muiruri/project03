@@ -1,15 +1,6 @@
 const mongoose = require('mongoose');
 
 const InsuranceSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  icon: {
-    type: String,
-    required: true,
-  },
- 
   insuranceProvider: { type: String },
   insuranceNumber: { type: String },
   groupNumber: { type: String },
@@ -18,7 +9,6 @@ const InsuranceSchema = new mongoose.Schema({
   effectiveDate: { type: String },
   expirationDate: { type: String },
   insuranceCardImage: { type: String, default: null },
- 
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
