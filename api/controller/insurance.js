@@ -62,6 +62,20 @@ exports.updateInsuranceProvider = async (req, res) => {
   }
 };
 
+// Update insurance data
+exports.updateInsuranceData = async (req, res) => {
+  try {
+    const { userId, ...updateData } = req.body;
+    const updatedInsurance = await Insurance.findOneAndUpdate({ userId }, updateData, { new: true });
+    if (!updatedInsurance) {
+      return res.status(404).json({ error: 'Insurance data not found' });
+    }
+    res.status(200).json(updatedInsurance);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Delete an insurance provider
 exports.deleteInsuranceProvider = async (req, res) => {
   try {
