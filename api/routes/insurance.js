@@ -8,6 +8,7 @@ router.post("/", insuranceController.createInsuranceProviders); // Use controlle
 router.get("/:id", insuranceController.getInsuranceProviderById); // Use controller function
 router.put("/:id", insuranceController.updateInsuranceProvider); // Use controller function
 router.delete("/:id", insuranceController.deleteInsuranceProvider); // Use controller function
-router.put("/", insuranceController.createInsuranceProviders); // Add route for updating insurance data
+router.put("/", insuranceController.updateInsuranceData); // Add route for updating insurance data
+router.get("/user/:userId", insuranceController.getInsuranceByUserId); // Add route for getting insurance by userId
 
 module.exports = router;
