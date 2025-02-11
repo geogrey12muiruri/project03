@@ -9,7 +9,7 @@ const errorHandler = require("./middlewares/errorHandler");
 const insuranceRouter = require("./routes/insurance"); // Import insurance routes
 const admin = require('firebase-admin'); // Import firebase-admin
 
-const serviceAccount = require('../serviceAccountKey.json');
+const serviceAccount = require('./serviceAccountKey.json');
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
