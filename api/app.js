@@ -7,6 +7,7 @@ const cors = require("cors"); // Import cors
 const router = require("./routes/users");
 const errorHandler = require("./middlewares/errorHandler");
 const insuranceRouter = require("./routes/insurance"); // Import insurance routes
+const admin = require('firebase-admin'); // Import firebase-admin
 
 const serviceAccount = require('../serviceAccountKey.json');
 
@@ -28,6 +29,26 @@ app.use(express.json()); //pass incoming json data from the user
 //!Routes
 app.use("/", router);
 app.use("/insurance", insuranceRouter); // Use insurance routes
+
+// New route to store FCM token
+app.post('/store-token', async (req, res) => {
+    const { userId, token } = req.body;
+
+    if (!userId || !token) {
+        return res.status(400).send('Missing required fields: userId or token');
+    }
+
+    try {
+        // Store the token in the database (pseudo code, replace with actual implementation)
+        // await TokenModel.create({ userId, token });
+
+        console.log(`Token for user ${userId} stored successfully`);
+        res.status(200).send('Token stored successfully');
+    } catch (error) {
+        console.log('Error storing token:', error);
+        res.status(500).send('Error storing token');
+    }
+});
 
 //!error handler
 app.use(errorHandler);
