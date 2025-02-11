@@ -10,6 +10,7 @@ const insuranceRouter = require("./routes/insurance"); // Import insurance route
 const admin = require('firebase-admin'); // Import firebase-admin
 const User = require("./model/User"); // Import User model
 const { Expo } = require('expo-server-sdk'); // Import Expo SDK
+const notificationScheduler = require('./notificationScheduler'); // Import notification scheduler
 
 const firebaseConfig = require('./config/firebaseConfig'); // Import firebaseConfig
 
@@ -96,6 +97,7 @@ app.post('/send-notification', async (req, res) => {
     }
 });
 
+// Importing notificationScheduler starts the scheduled job
 //! Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server is up and running on port ${PORT}`));
