@@ -8,6 +8,11 @@ const router = require("./routes/users");
 const errorHandler = require("./middlewares/errorHandler");
 const insuranceRouter = require("./routes/insurance"); // Import insurance routes
 
+const serviceAccount = require('../serviceAccountKey.json');
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+});
 const app = express();
 
 //! Connect to mongodb
@@ -26,6 +31,33 @@ app.use("/insurance", insuranceRouter); // Use insurance routes
 
 //!error handler
 app.use(errorHandler);
+
+
+app.post('/send-notification', async (req, res) => {
+    const { token, title, body } = req.body;
+
+if(!token || !title || !body) {
+    return res.status(400).send('Missing required fields: token, title or body');
+}
+
+const message = {
+    notification:{
+        title: title,
+        body: body
+    },
+    token: token
+}
+try{
+  const response = await admin.messaging().send(message);
+  console.log('Successfully sent message:', response);
+  res.status(200).send('Notification sent successfully');
+} catch (error) {
+    console.log('Error sending message:', error);
+    res.status(500).send('Error sending notification');
+}
+
+});
+
 
 //! Start the server
 const PORT = process.env.PORT || 3000;
