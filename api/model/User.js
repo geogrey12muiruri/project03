@@ -53,6 +53,8 @@ const userSchema = new mongoose.Schema(
       enum: ["professional", "patient"],
       required: true,
     },
+    // New fcmToken field
+    fcmToken: { type: String, default: null },
   },
   {
     timestamps: true,
