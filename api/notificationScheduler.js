@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const moment = require('moment');
-const Appointment = require('./models/appointment.model');
-const User = require('./models/user.model');
+const Appointment = require('./model/appointment.model');
+const User = require('./model/User');
 const { sendPushNotification } = require('./service/notificationService');
 
 // Schedule a job to run every hour
