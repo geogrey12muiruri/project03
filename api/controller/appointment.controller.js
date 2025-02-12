@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
-const Appointment = require('../models/appointment.model');
-const Schedule = require('../models/schedule.model');
+const Appointment = require('../model/appointment.model');
+const Schedule = require('../model/schedule.model');
 
-const Patient = require('../models/patient.model');
-const User = require('../models/user.model');
+const Patient = require('../model/patient.model');
+const User = require('../model/User');
 const moment = require('moment');
 const { sendPushNotification } = require('../service/notificationService');
 
