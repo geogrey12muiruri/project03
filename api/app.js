@@ -60,35 +60,40 @@ app.post('/store-token', async (req, res) => {
 app.use(errorHandler);
 
 app.post('/send-notification', async (req, res) => {
-    const { token, title, body } = req.body;
+    const { token, title, body, userId } = req.body;
 
-    if (!token || !title || !body) {
-        return res.status(400).send('Missing required fields: token, title or body');
+    if (!token || !title || !body || !userId) {
+        return res.status(400).send('Missing required fields: token, title, body, or userId');
     }
 
-    // Create the message
-    let messages = [];
-    if (!Expo.isExpoPushToken(token)) {
-        console.error(`Push token ${token} is not a valid Expo push token`);
-        return res.status(400).send('Invalid Expo push token');
-    }
-
-    messages.push({
-        to: token,
-        sound: 'default',
-        title: title,
-        body: body,
-        data: { title, body },
-    });
-
-    // Send the message
-    let chunks = expo.chunkPushNotifications(messages);
-    let tickets = [];
     try {
+        // Store or update the token for this user
+        await User.findByIdAndUpdate(userId, { fcmToken: token });
+
+        // Create the message
+        let messages = [];
+        if (!Expo.isExpoPushToken(token)) {
+            console.error(`Push token ${token} is not a valid Expo push token`);
+            return res.status(400).send('Invalid Expo push token');
+        }
+
+        messages.push({
+            to: token,
+            sound: 'default',
+            title: title,
+            body: body,
+            data: { title, body, userId },
+        });
+
+        // Send the message
+        let chunks = expo.chunkPushNotifications(messages);
+        let tickets = [];
+        
         for (let chunk of chunks) {
             let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
             tickets.push(...ticketChunk);
         }
+        
         console.log('Successfully sent message:', tickets);
         res.status(200).send('Notification sent successfully');
     } catch (error) {
