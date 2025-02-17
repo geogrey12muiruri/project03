@@ -10,7 +10,7 @@ const insuranceRouter = require("./routes/insurance"); // Import insurance route
 const admin = require('firebase-admin'); // Import firebase-admin
 const User = require("./model/User"); // Import User model
 
-const firebaseConfig = require('./config/firebaseConfig'); // Import firebaseConfig
+const firebaseConfig = require('../api/config/firebaseConfig'); // Import firebaseConfig
 
 admin.initializeApp({
     credential: admin.credential.cert(firebaseConfig),
