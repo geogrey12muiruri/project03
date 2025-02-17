@@ -9,16 +9,12 @@ const errorHandler = require("./middlewares/errorHandler");
 const insuranceRouter = require("./routes/insurance"); // Import insurance routes
 const admin = require('firebase-admin'); // Import firebase-admin
 const User = require("./model/User"); // Import User model
-const { Expo } = require('expo-server-sdk'); // Import Expo SDK
-const notificationScheduler = require('./notificationScheduler'); // Import notification scheduler
 
 const firebaseConfig = require('./config/firebaseConfig'); // Import firebaseConfig
 
 admin.initializeApp({
     credential: admin.credential.cert(firebaseConfig),
 });
-
-let expo = new Expo(); // Create a new Expo SDK client
 
 const app = express();
 
@@ -66,30 +62,17 @@ app.post('/send-notification', async (req, res) => {
         return res.status(400).send('Missing required fields: token, title or body');
     }
 
-    // Create the message
-    let messages = [];
-    if (!Expo.isExpoPushToken(token)) {
-        console.error(`Push token ${token} is not a valid Expo push token`);
-        return res.status(400).send('Invalid Expo push token');
-    }
+    const message = {
+        notification: {
+            title: title,
+            body: body
+        },
+        token: token
+    };
 
-    messages.push({
-        to: token,
-        sound: 'default',
-        title: title,
-        body: body,
-        data: { title, body },
-    });
-
-    // Send the message
-    let chunks = expo.chunkPushNotifications(messages);
-    let tickets = [];
     try {
-        for (let chunk of chunks) {
-            let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-            tickets.push(...ticketChunk);
-        }
-        console.log('Successfully sent message:', tickets);
+        const response = await admin.messaging().send(message);
+        console.log('Successfully sent message:', response);
         res.status(200).send('Notification sent successfully');
     } catch (error) {
         console.log('Error sending message:', error);
@@ -97,7 +80,6 @@ app.post('/send-notification', async (req, res) => {
     }
 });
 
-// Importing notificationScheduler starts the scheduled job
 //! Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server is up and running on port ${PORT}`));
