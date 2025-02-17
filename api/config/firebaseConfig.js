@@ -12,6 +12,4 @@ const firebaseConfig = {
   universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN
 };
 
-console.log(firebaseConfig.private_key); // Debugging line
-
 module.exports = firebaseConfig;
